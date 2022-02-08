@@ -26,10 +26,11 @@ DataTable(OneMinute,True,-1)
 	Sample(1,PTemp_C,FP2)
 EndTable
 
-'DataTable(Range,True,-1)
-'	DataInterval(0,10,Sec,10)
-'	Average(1,Range_mm,String,False)
-'EndTable
+DataTable(Depth_mm_tab,True,-1)
+	DataInterval(0,10,Sec,10)
+	TableFile("CRD:Depth_mm",64,-1,0,60,Min,0,0)
+	Average(1,Depth_mm,FP2,False)
+EndTable
 
 DataTable(Daily,True,-1)
 	DataInterval(0,1440,Min,10)
