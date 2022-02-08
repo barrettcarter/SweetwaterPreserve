@@ -9,14 +9,25 @@ Public Range_mm_st As String * 100
 Public Num_bytes
 Public Range_mm As Float
 Public Depth_mm
+Public Flow_cfs
 
-Const Datum = 1000
+Const Datum = 1000 ' distance to the floor/bottom (depth = 0)
+Const D_orf = 1 'diameter of the orifice in inches
+Const Ang_weir = 120 ' Angle of the weir in degrees
+Const H_gap = 0.604 ' Distance between floor and bottom of weir
+Const H_orf = 0.06 ' Distance between floor and bottom of orifice
+Const C_orf = 0.6 ' Orifice discharge coefficient
+Const Dens_water = 1000 ' density of water in kg/m^3
+Const g = 9.81 ' acceleration due to gravity in kg m/s^2
+
+
 
 Units BattV=Volts
 Units PTemp_C=Deg C
 Units Temp_C=Deg C
 Units Range_mm = mm
 Units Depth_mm = mm
+Units Flow_cfs = cfs
 
 'Define Data Tables
 DataTable(OneMinute,True,-1)
@@ -55,12 +66,14 @@ BeginProg
 		PanelTemp(PTemp_C,60)
 		'Type T Thermocouple measurements 'Temp_C'
 		TCDiff(Temp_C,1,mv200C,1,TypeT,PTemp_C,True,0,60,1,0)
-		
-		'SerialFlush(ComC1)
+
+    ' Bring in data from range sensor and calculate depth
 		SerialInRecord(ComC1,Range_mm_st,82,0,&H0D,Num_bytes,00)
-		'SerialClose(ComC1)
 		Range_mm = Range_mm_st
 		Depth_mm = Datum - Range_mm
+		
+    ' Calculate flow rate
+    #If Depth_mm < H_orf
 		'Call Data Tables and Store Data
 		CallTable OneMinute
 		CallTable Daily
