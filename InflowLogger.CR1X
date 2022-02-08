@@ -65,6 +65,6 @@ BeginProg
 		CallTable OneMinute
 		CallTable Daily
 		CallTable FiveMinute
-		'CallTable Range
+		CallTable Depth_mm_tab
 	NextScan
 EndProg
