@@ -1,0 +1,69 @@
+'CR1000X Series
+'Created by Short Cut (4.4)
+
+'Declare Variables and Units
+Public BattV
+Public PTemp_C
+Public Temp_C
+Public Range_mm_st As String * 100
+Public Num_bytes
+Public Range_mm As Float
+Public Depth_mm
+
+Const Datum = 1000
+
+Units BattV=Volts
+Units PTemp_C=Deg C
+Units Temp_C=Deg C
+Units Range_mm = mm
+Units Depth_mm = mm
+
+'Define Data Tables
+DataTable(OneMinute,True,-1)
+	DataInterval(0,60,Sec,10)
+	Average(1,Temp_C,FP2,False)
+	Minimum(1,BattV,FP2,False,False)
+	Sample(1,PTemp_C,FP2)
+EndTable
+
+'DataTable(Range,True,-1)
+'	DataInterval(0,10,Sec,10)
+'	Average(1,Range_mm,String,False)
+'EndTable
+
+DataTable(Daily,True,-1)
+	DataInterval(0,1440,Min,10)
+	Minimum(1,BattV,FP2,False,False)
+	Average(1,Temp_C,FP2,False)
+EndTable
+
+DataTable(FiveMinute,True,-1)
+	DataInterval(0,5,Min,10)
+	Average(1,Temp_C,FP2,False)
+	Minimum(1,Temp_C,FP2,False,False)
+EndTable
+
+'Main Program
+BeginProg
+  SerialOpen(ComC1,9600,16,0,100)
+	'Main Scan
+	Scan(1,Sec,3,0)
+		'Default CR1000X Datalogger Battery Voltage measurement 'BattV'
+		Battery(BattV)
+		'Default CR1000X Datalogger Wiring Panel Temperature measurement 'PTemp_C'
+		PanelTemp(PTemp_C,60)
+		'Type T Thermocouple measurements 'Temp_C'
+		TCDiff(Temp_C,1,mv200C,1,TypeT,PTemp_C,True,0,60,1,0)
+		
+		'SerialFlush(ComC1)
+		SerialInRecord(ComC1,Range_mm_st,82,0,&H0D,Num_bytes,00)
+		'SerialClose(ComC1)
+		Range_mm = Range_mm_st
+		Depth_mm = Datum - Range_mm
+		'Call Data Tables and Store Data
+		CallTable OneMinute
+		CallTable Daily
+		CallTable FiveMinute
+		'CallTable Range
+	NextScan
+EndProg
