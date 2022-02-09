@@ -9,25 +9,64 @@ Public Range_mm_st As String * 100
 Public Num_bytes
 Public Range_mm As Float
 Public Depth_mm
-Public Flow_cfs
+Public Depth_orf
+Public Depth_weir
+Public Flow_total
+Public Flow_weir
+Public Flow_orf
+Public Flow_cum
+Public Sampler_flag As Boolean
+Public Flow_cum_dt
+'Public Time_prev(9)
+'Public Time_now(9)
+'Public Time_since_start
 
-Const Datum = 1000 ' distance to the floor/bottom (depth = 0)
-Const D_orf = 1 'diameter of the orifice in inches
-Const Ang_weir = 120 ' Angle of the weir in degrees
-Const H_gap = 0.604 ' Distance between floor and bottom of weir
-Const H_orf = 0.06 ' Distance between floor and bottom of orifice
-Const C_orf = 0.6 ' Orifice discharge coefficient
-Const Dens_water = 1000 ' density of water in kg/m^3
-Const g = 9.81 ' acceleration due to gravity in kg m/s^2
-
-
+'Alias Time_prev(1) = Year_prev         'assign the alias Year to rTime(1)
+'Alias Time_prev(2) = Month_prev        'assign the alias Month to rTime(2)
+'Alias Time_prev(3) = DOM_prev          'assign the alias DOM to rTime(3)
+'Alias Time_prev(4) = Hour_prev         'assign the alias Hour to rTime(4)
+'Alias Time_prev(5) = Minute_prev       'assign the alias Minute to rTime(5)
+'Alias Time_prev(6) = Second_prev       'assign the alias Second to rTime(6)
+'Alias Time_prev(7) = uSecond_prev      'assign the alias uSecond to rTime(7)
+'Alias Time_prev(8) = WeekDay_prev      'assign the alias WeekDay to rTime(8)
+'Alias Time_prev(9) = DOY_prev  'assign the alias Day_of_Year to rTime(9)
+'
+'Alias Time_prev(1) = Year_prev         'assign the alias Year to rTime(1)
+'Alias Time_prev(2) = Month_prev        'assign the alias Month to rTime(2)
+'Alias Time_prev(3) = DOM_prev          'assign the alias DOM to rTime(3)
+'Alias Time_prev(4) = Hour_prev         'assign the alias Hour to rTime(4)
+'Alias Time_prev(5) = Minute_prev       'assign the alias Minute to rTime(5)
+'Alias Time_prev(6) = Second_prev       'assign the alias Second to rTime(6)
+'Alias Time_prev(7) = uSecond_prev      'assign the alias uSecond to rTime(7)
+'Alias Time_prev(8) = WeekDay_prev      'assign the alias WeekDay to rTime(8)
+'Alias Time_prev(9) = DOY_prev  'assign the alias Day_of_Year to rTime(9)
 
 Units BattV=Volts
 Units PTemp_C=Deg C
 Units Temp_C=Deg C
 Units Range_mm = mm
 Units Depth_mm = mm
-Units Flow_cfs = cfs
+Units Depth_orf = mm
+Units Depth_weir = mm
+Units Flow_total = cfs
+Units Flow_weir = cfs
+Units Flow_orf = cfs
+Units Flow_cum = cfs
+Units Flow_cum_dt = Sec
+
+Const Datum = 1000 ' distance to the floor/bottom (depth = 0) in mm
+Const D_orf = 1*25.4 'diameter of the orifice in mm
+Const Ang_weir = 120 ' Angle of the weir in degrees
+Const H_gap = 7.25*25.4 ' Distance between floor and bottom of weir in mm
+Const H_orf = 0 ' Distance between floor and bottom of orifice in mm
+Const C_orf = 0.6 ' Orifice discharge coefficient
+Const Dens_water = 1000 ' density of water in kg/m^3
+Const g = 9.81 ' acceleration due to gravity in kg m/s^2
+Const C_weir = 0.607165052-0.000874466963*Ang_weir+0.00000610393334*Ang_weir^2
+Const k_weir = 0.0144902648 - 0.00033955535*Ang_weir  + 0.00000329819003*Ang_weir^2 _
+- 0.0000000106215442*Ang_weir^3
+Const pi = 3.14159
+
 
 'Define Data Tables
 DataTable(OneMinute,True,-1)
@@ -37,10 +76,11 @@ DataTable(OneMinute,True,-1)
 	Sample(1,PTemp_C,FP2)
 EndTable
 
-DataTable(Depth_mm_tab,True,-1)
+DataTable(TenSec,True,-1)
 	DataInterval(0,10,Sec,10)
 	TableFile("CRD:Depth_mm",64,-1,0,60,Min,0,0)
 	Average(1,Depth_mm,FP2,False)
+	Average(1,Flow_total,FP2,False)
 EndTable
 
 DataTable(Daily,True,-1)
@@ -58,6 +98,7 @@ EndTable
 'Main Program
 BeginProg
   SerialOpen(ComC1,9600,16,0,100)
+  Timer(1,uSec,2)
 	'Main Scan
 	Scan(1,Sec,3,0)
 		'Default CR1000X Datalogger Battery Voltage measurement 'BattV'
@@ -73,11 +114,33 @@ BeginProg
 		Depth_mm = Datum - Range_mm
 		
     ' Calculate flow rate
-    #If Depth_mm < H_orf
+    If Depth_mm < H_orf Then
+      Depth_weir = 0
+      Depth_orf = 0
+      Flow_weir = 0
+      Flow_orf = 0
+      
+    Else 
+      Depth_orf = Depth_mm-H_orf
+      Flow_orf = C_orf*pi/4*(D_orf/1000)^2*(2*Depth_orf/1000*Dens_water*g _
+      *Dens_water)^(1/2)/Dens_water*35.3
+      If Depth_mm < H_gap Then
+        Depth_weir = 0
+        Flow_weir = 0
+      Else
+        Depth_weir = Depth_mm - H_gap
+        Flow_weir = 4.28*C_weir*TAN(Ang_weir*pi/180/2)*(Depth_weir/25.4/12+k_weir)^(5/2)
+      EndIf
+    EndIf
+    
+    Flow_total = Flow_orf + Flow_weir
+    
+    'Flow cumulation
+    
 		'Call Data Tables and Store Data
 		CallTable OneMinute
 		CallTable Daily
 		CallTable FiveMinute
-		CallTable Depth_mm_tab
+		CallTable TenSec
 	NextScan
 EndProg
