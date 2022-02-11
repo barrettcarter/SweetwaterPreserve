@@ -15,8 +15,9 @@ Public Flow_total
 Public Flow_weir
 Public Flow_orf
 Public Flow_cum
-Public Sampler_flag As Boolean
-Public Flow_cum_dt
+'Public Sampler_flag As Boolean
+Public Flow_cum_dt As Float
+
 'Public Time_prev(9)
 'Public Time_now(9)
 'Public Time_since_start
@@ -54,6 +55,7 @@ Units Flow_orf = cfs
 Units Flow_cum = cfs
 Units Flow_cum_dt = Sec
 
+
 Const Datum = 1000 ' distance to the floor/bottom (depth = 0) in mm
 Const D_orf = 1*25.4 'diameter of the orifice in mm
 Const Ang_weir = 120 ' Angle of the weir in degrees
@@ -66,7 +68,7 @@ Const C_weir = 0.607165052-0.000874466963*Ang_weir+0.00000610393334*Ang_weir^2
 Const k_weir = 0.0144902648 - 0.00033955535*Ang_weir  + 0.00000329819003*Ang_weir^2 _
 - 0.0000000106215442*Ang_weir^3
 Const pi = 3.14159
-
+Const Sampler_flow_thresh = 5 'flow threshold for sample to be collected in ft^3
 
 'Define Data Tables
 DataTable(OneMinute,True,-1)
@@ -98,7 +100,7 @@ EndTable
 'Main Program
 BeginProg
   SerialOpen(ComC1,9600,16,0,100)
-  Timer(1,uSec,2)
+  'Timer(1,uSec,0)
 	'Main Scan
 	Scan(1,Sec,3,0)
 		'Default CR1000X Datalogger Battery Voltage measurement 'BattV'
@@ -136,7 +138,13 @@ BeginProg
     Flow_total = Flow_orf + Flow_weir
     
     'Flow cumulation
-    
+    Flow_cum_dt = Timer(1,0,4)/10^6
+    Timer(1,0,2)
+    Flow_cum += Flow_total*Flow_cum_dt
+    If Flow_cum > Sampler_flow_thresh Then
+      PulsePort(C3,35000)
+      Flow_cum = 0
+    EndIf
 		'Call Data Tables and Store Data
 		CallTable OneMinute
 		CallTable Daily
