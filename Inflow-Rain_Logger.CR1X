@@ -2,9 +2,12 @@
 'Created by Short Cut (4.4)
 
 'Declare Variables and Units
+'General Variables
 Public BattV
 Public PTemp_C
 Public Temp_C
+
+'Inflow Variables
 Public Range_mm_st As String * 100
 Public Num_bytes
 Public Range_mm As Float
@@ -16,6 +19,12 @@ Public Flow_weir As Float
 Public Flow_orf As Float
 Public Flow_cum = 0.0
 Public Flow_cum_dt As Float
+
+'Pond Variables
+Public Range_mm_st_p As String * 100
+Public Num_bytes_p
+Public Range_mm_p As Float
+Public Depth_mm_p As Float
 
 Units BattV=Volts
 Units PTemp_C=Deg C
@@ -30,6 +39,11 @@ Units Flow_orf = cfs
 Units Flow_cum = cf
 Units Flow_cum_dt = Sec
 
+Units Range_mm_st_p = mm
+Units Num_bytes_p = bytes
+Units Range_mm_p = mm
+Units Depth_mm_p = mm
+
 
 Const Datum = 1500 ' distance to the floor/bottom (depth = 0) in mm
 Const D_orf = 1*25.4 'diameter of the orifice in mm
@@ -43,7 +57,7 @@ Const C_weir = 0.607165052-0.000874466963*Ang_weir+0.00000610393334*Ang_weir^2
 Const k_weir = 0.0144902648 - 0.00033955535*Ang_weir  + 0.00000329819003*Ang_weir^2 _
 - 0.0000000106215442*Ang_weir^3
 Const pi = 3.14159
-Const Sampler_flow_thresh = 50 'flow threshold for sample to be collected in ft^3
+Const Sampler_flow_thresh = 414 'flow threshold for sample to be collected in ft^3
 
 'Define Data Tables
 DataTable(OneMinute,True,-1)
@@ -119,7 +133,7 @@ BeginProg
       Flow_cum += Flow_total*Flow_cum_dt
     EndIf
     If Flow_cum > Sampler_flow_thresh Then
-      PulsePort(C2,35000)
+      PulsePort(C3,35000)
       Flow_cum = 0
     EndIf
 		'Call Data Tables and Store Data
