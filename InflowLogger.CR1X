@@ -8,13 +8,13 @@ Public Temp_C
 Public Range_mm_st As String * 100
 Public Num_bytes
 Public Range_mm As Float
-Public Depth_mm
-Public Depth_orf
-Public Depth_weir
-Public Flow_total
-Public Flow_weir
-Public Flow_orf
-Public Flow_cum
+Public Depth_mm As Float
+Public Depth_orf As Float
+Public Depth_weir As Float
+Public Flow_total As Float
+Public Flow_weir As Float
+Public Flow_orf As Float
+Public Flow_cum = 0.0
 'Public Sampler_flag As Boolean
 Public Flow_cum_dt As Float
 
@@ -52,11 +52,11 @@ Units Depth_weir = mm
 Units Flow_total = cfs
 Units Flow_weir = cfs
 Units Flow_orf = cfs
-Units Flow_cum = cfs
+Units Flow_cum = cf
 Units Flow_cum_dt = Sec
 
 
-Const Datum = 1000 ' distance to the floor/bottom (depth = 0) in mm
+Const Datum = 1500 ' distance to the floor/bottom (depth = 0) in mm
 Const D_orf = 1*25.4 'diameter of the orifice in mm
 Const Ang_weir = 120 ' Angle of the weir in degrees
 Const H_gap = 7.25*25.4 ' Distance between floor and bottom of weir in mm
@@ -68,7 +68,7 @@ Const C_weir = 0.607165052-0.000874466963*Ang_weir+0.00000610393334*Ang_weir^2
 Const k_weir = 0.0144902648 - 0.00033955535*Ang_weir  + 0.00000329819003*Ang_weir^2 _
 - 0.0000000106215442*Ang_weir^3
 Const pi = 3.14159
-Const Sampler_flow_thresh = 5 'flow threshold for sample to be collected in ft^3
+Const Sampler_flow_thresh = 414 'flow threshold for sample to be collected in ft^3
 
 'Define Data Tables
 DataTable(OneMinute,True,-1)
@@ -140,7 +140,9 @@ BeginProg
     'Flow cumulation
     Flow_cum_dt = Timer(1,0,4)/10^6
     Timer(1,0,2)
-    Flow_cum += Flow_total*Flow_cum_dt
+    If Flow_total <> NAN Then
+      Flow_cum += Flow_total*Flow_cum_dt
+    EndIf
     If Flow_cum > Sampler_flow_thresh Then
       PulsePort(C3,35000)
       Flow_cum = 0
