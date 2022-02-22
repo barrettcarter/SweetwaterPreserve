@@ -129,7 +129,7 @@ BeginProg
     If Flow_cum > Sampler_flow_thresh Then
       'PulsePort(C2,35000)
       SWVX(VX1,1,1)
-      Delay(1,1,25)
+      Delay(1,25,1)
       SWVX(VX1,0,1)
 '      WriteIO( &B10, &B10 )  'Set bit 2 (C2) high
 '      Flow_cum = 0  'Reset cumulative flow
