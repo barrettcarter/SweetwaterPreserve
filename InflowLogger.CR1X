@@ -80,7 +80,7 @@ EndTable
 
 'Main Program
 BeginProg
-  'SerialOpen(ComC1,9600,16,0,100)
+  SerialOpen(ComC1,9600,16,0,100)
   'Timer(1,uSec,0)
 	'Main Scan
 	Scan(10,Sec,3,0)
@@ -92,9 +92,9 @@ BeginProg
 		TCDiff(Temp_C,1,mv200C,1,TypeT,PTemp_C,True,0,60,1,0)
     
     ' Bring in data from range sensor and calculate depth
-    SerialOpen(ComC1,9600,16,0,100)
+'    SerialOpen(ComC1,9600,16,0,100)
 		SerialInRecord(ComC1,Range_mm_st,82,0,&H0D,Num_bytes,00)
-		SerialClose(ComC1)
+'		SerialClose(ComC1)
 		Range_mm = Range_mm_st
 		Depth_mm = Datum - Range_mm
 		
