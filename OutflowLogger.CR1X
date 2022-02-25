@@ -1,0 +1,149 @@
+'CR1000X Series
+'This is the program for collecting flow-weighted samples from the
+'stormwater entering the curb inlet upstream of the bioretention pond.
+
+'The program will also be used to measure water level in the pond and to
+'collect rain data.
+
+SequentialMode
+
+'Declare Variables and Units
+Public BattV
+Public PTemp_C
+Public Temp_C
+
+Public Range_mm_st As String * 100
+Public Num_bytes
+Public Range_mm As Float
+Public Depth_mm As Float
+Public Depth_orf As Float
+Public Depth_weir As Float
+Public Flow_total As Float
+Public Flow_weir As Float
+Public Flow_orf As Float
+Public Flow_cum = 0.0
+Public Flow_cum_dt As Float
+
+Units BattV=Volts
+Units PTemp_C=Deg C
+Units Temp_C=Deg C
+
+Units Range_mm = mm
+Units Depth_mm = mm
+Units Depth_orf = mm
+Units Depth_weir = mm
+Units Flow_total = cfs
+Units Flow_weir = cfs
+Units Flow_orf = cfs
+Units Flow_cum = cf
+Units Flow_cum_dt = Sec
+
+
+Const Dens_water = 1000 ' density of water in kg/m^3
+Const g = 9.81 ' acceleration due to gravity in kg m/s^2
+Const C_weir = 0.607165052-0.000874466963*Ang_weir+0.00000610393334*Ang_weir^2
+Const k_weir = 0.0144902648 - 0.00033955535*Ang_weir  + 0.00000329819003*Ang_weir^2 _
+- 0.0000000106215442*Ang_weir^3
+Const pi = 3.14159
+Const Sampler_flow_thresh = 16 'flow threshold for sample to be collected in ft^3
+Const H_orf = 0 ' Distance between floor and bottom of orifice in mm
+Const C_orf = 0.6 ' Orifice discharge coefficient
+
+Const Datum = 1500 ' distance to the floor/bottom (depth = 0) in mm
+Const D_orf = 5/16*25.4 'diameter of the orifice in mm
+Const Ang_weir = 60 ' Angle of the weir in degrees
+Const H_gap_1 = 9*25.4 ' Distance between floor and bottom of weir in mm
+
+
+'Define Data Tables
+DataTable(OneMinute,True,-1)
+	DataInterval(0,60,Sec,10)
+	Average(1,Temp_C,FP2,False)
+	Minimum(1,BattV,FP2,False,False)
+	Sample(1,PTemp_C,FP2)
+EndTable
+
+DataTable(TenSec,True,-1)
+	DataInterval(0,10,Sec,10)
+	TableFile("CRD:Depth_mm",64,-1,0,60,Min,0,0)
+	Average(1,Depth_mm,FP2,False)
+	Average(1,Flow_total,FP2,False)
+EndTable
+
+DataTable(Daily,True,-1)
+	DataInterval(0,1440,Min,10)
+	Minimum(1,BattV,FP2,False,False)
+	Average(1,Temp_C,FP2,False)
+EndTable
+
+DataTable(FiveMinute,True,-1)
+	DataInterval(0,5,Min,10)
+	Average(1,Temp_C,FP2,False)
+	Minimum(1,Temp_C,FP2,False,False)
+EndTable
+
+'Main Program
+BeginProg
+  SerialOpen(ComC1,9600,16,0,100)
+  'Timer(1,uSec,0)
+	'Main Scan
+	Scan(10,Sec,3,0)
+		'Default CR1000X Datalogger Battery Voltage measurement 'BattV'
+		Battery(BattV)
+		'Default CR1000X Datalogger Wiring Panel Temperature measurement 'PTemp_C'
+		PanelTemp(PTemp_C,60)
+		'Type T Thermocouple measurements 'Temp_C'
+		TCDiff(Temp_C,1,mv200C,1,TypeT,PTemp_C,True,0,60,1,0)
+    
+    ' Bring in data from range sensor and calculate depth
+'    SerialOpen(ComC1,9600,16,0,100)
+		SerialInRecord(ComC1,Range_mm_st,82,0,&H0D,Num_bytes,00)
+'		SerialClose(ComC1)
+		Range_mm = Range_mm_st
+		Depth_mm = Datum - Range_mm
+		
+    ' Calculate flow rate
+    If Depth_mm < H_orf Then
+      Depth_weir = 0
+      Depth_orf = 0
+      Flow_weir = 0
+      Flow_orf = 0
+      
+    Else 
+      Depth_orf = Depth_mm-H_orf
+      Flow_orf = C_orf*pi/4*(D_orf/1000)^2*(2*Depth_orf/1000*Dens_water*g _
+      *Dens_water)^(1/2)/Dens_water*35.3
+      If Depth_mm < H_gap Then
+        Depth_weir = 0
+        Flow_weir = 0
+      Else
+        Depth_weir = Depth_mm - H_gap
+        Flow_weir = 4.28*C_weir*TAN(Ang_weir*pi/180/2)*(Depth_weir/25.4/12+k_weir)^(5/2)
+      EndIf
+    EndIf
+    
+    Flow_total = Flow_orf + Flow_weir
+    
+    'Flow cumulation
+    Flow_cum_dt = Timer(1,0,4)/10^6
+    Timer(1,0,2)
+    If Flow_total <> NAN Then
+      Flow_cum += Flow_total*Flow_cum_dt
+    EndIf
+    If Flow_cum > Sampler_flow_thresh Then
+      'PulsePort(C2,35000)
+      SWVX(VX1,1,1)
+      Delay(1,25,1)
+      SWVX(VX1,0,1)
+'      WriteIO( &B10, &B10 )  'Set bit 2 (C2) high
+      Flow_cum = 0  'Reset cumulative flow
+'    Else                'Is it false
+'      WriteIO( &B10, &B00 ) 'Set C2 low
+    EndIf
+		'Call Data Tables and Store Data
+		CallTable OneMinute
+		CallTable Daily
+		CallTable FiveMinute
+		CallTable TenSec
+	NextScan
+EndProg
