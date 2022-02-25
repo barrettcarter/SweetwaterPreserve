@@ -55,7 +55,8 @@ Const Datum_p = 1500 ' distance to ground in pond (depth = 0) in mm
 Const D_orf = 1*25.4 'diameter of the orifice in mm
 Const Ang_weir = 120 ' Angle of the weir in degrees
 Const H_gap = 7.25*25.4 ' Distance between floor and bottom of weir in mm
-Const H_orf = 0 ' Distance between floor and bottom of orifice in mm
+Const H_orf = 13 ' Distance between floor and bottom of orifice in mm
+Const H_min = 30 'Minimum water depth to calculate flow in mm
 Const C_orf = 0.6 ' Orifice discharge coefficient
 Const Dens_water = 1000 ' density of water in kg/m^3
 Const g = 9.81 ' acceleration due to gravity in kg m/s^2
@@ -106,7 +107,7 @@ BeginProg
 		Depth_mm_p = Datum_p - Range_mm_p
 		
     ' Calculate flow rate
-    If Depth_mm < H_orf Then
+    If Depth_mm < H_min Then
       Depth_weir = 0
       Depth_orf = 0
       Flow_weir = 0
