@@ -46,6 +46,7 @@ Units Depth_mm_p = mm
 
 
 Const Datum = 1500 ' distance to the floor/bottom (depth = 0) in mm
+Const Datum_p = 1500 ' distance to ground in pond (depth = 0) in mm
 Const D_orf = 1*25.4 'diameter of the orifice in mm
 Const Ang_weir = 120 ' Angle of the weir in degrees
 Const H_gap = 7.25*25.4 ' Distance between floor and bottom of weir in mm
@@ -57,41 +58,28 @@ Const C_weir = 0.607165052-0.000874466963*Ang_weir+0.00000610393334*Ang_weir^2
 Const k_weir = 0.0144902648 - 0.00033955535*Ang_weir  + 0.00000329819003*Ang_weir^2 _
 - 0.0000000106215442*Ang_weir^3
 Const pi = 3.14159
-Const Sampler_flow_thresh = 414 'flow threshold for sample to be collected in ft^3
+Const Sampler_flow_thresh = 129 'flow threshold for sample to be collected in ft^3
 
 'Define Data Tables
-DataTable(OneMinute,True,-1)
-	DataInterval(0,60,Sec,10)
-	Average(1,Temp_C,FP2,False)
-	Minimum(1,BattV,FP2,False,False)
-	Sample(1,PTemp_C,FP2)
-EndTable
-
-DataTable(TenSec,True,-1)
-	DataInterval(0,10,Sec,10)
-	TableFile("CRD:Depth_mm",64,-1,0,60,Min,0,0)
-	Average(1,Depth_mm,FP2,False)
-	Average(1,Flow_total,FP2,False)
-EndTable
-
-DataTable(Daily,True,-1)
-	DataInterval(0,1440,Min,10)
-	Minimum(1,BattV,FP2,False,False)
-	Average(1,Temp_C,FP2,False)
-EndTable
 
 DataTable(FiveMinute,True,-1)
-	DataInterval(0,5,Min,10)
+  DataInterval(0,5,Min,10)
+  TableFile("CRD:Sweetwater_Inflow_rain",64,-1,0,60,Min,0,0)
 	Average(1,Temp_C,FP2,False)
-	Minimum(1,Temp_C,FP2,False,False)
+	Average(1,Range_mm,FP2,False)
+	Average(1,Depth_mm,FP2,False)
+	Average(1,Flow_total,FP2,False)
+	Average(1,Range_mm_p,FP2,False)
+	Average(1,Depth_mm_p,FP2,False)
 EndTable
 
 'Main Program
 BeginProg
   SerialOpen(ComC1,9600,16,0,100)
+  SerialOpen(ComC3,9600,16,0,100)
   'Timer(1,uSec,0)
 	'Main Scan
-	Scan(1,Sec,3,0)
+	Scan(10,Sec,3,0)
 		'Default CR1000X Datalogger Battery Voltage measurement 'BattV'
 		Battery(BattV)
 		'Default CR1000X Datalogger Wiring Panel Temperature measurement 'PTemp_C'
@@ -99,10 +87,14 @@ BeginProg
 		'Type T Thermocouple measurements 'Temp_C'
 		TCDiff(Temp_C,1,mv200C,1,TypeT,PTemp_C,True,0,60,1,0)
 
-    ' Bring in data from range sensor and calculate depth
-		SerialInRecord(ComC1,Range_mm_st,82,0,&H0D,Num_bytes,00)
+    ' Bring in data from range sensors and calculate depths
+		SerialInRecord(ComC1,Range_mm_st,82,0,&H0D,Num_bytes,00) 'Weir sensor
 		Range_mm = Range_mm_st
 		Depth_mm = Datum - Range_mm
+		
+  	SerialInRecord(ComC3,Range_mm_st_p,82,0,&H0D,Num_bytes_p,00) 'Pond sensor
+		Range_mm_p = Range_mm_st_p
+		Depth_mm_p = Datum_p - Range_mm_p
 		
     ' Calculate flow rate
     If Depth_mm < H_orf Then
@@ -133,13 +125,10 @@ BeginProg
       Flow_cum += Flow_total*Flow_cum_dt
     EndIf
     If Flow_cum > Sampler_flow_thresh Then
-      PulsePort(C3,35000)
+      PulsePort(C5,25000)
       Flow_cum = 0
     EndIf
 		'Call Data Tables and Store Data
-		CallTable OneMinute
-		CallTable Daily
 		CallTable FiveMinute
-		CallTable TenSec
 	NextScan
 EndProg
