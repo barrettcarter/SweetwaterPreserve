@@ -26,6 +26,9 @@ Public Num_bytes_p
 Public Range_mm_p As Float
 Public Depth_mm_p As Float
 
+'Rain Variables
+Public Rain_in
+
 Units BattV=Volts
 Units PTemp_C=Deg C
 Units Temp_C=Deg C
@@ -44,9 +47,11 @@ Units Num_bytes_p = bytes
 Units Range_mm_p = mm
 Units Depth_mm_p = mm
 
+Units Rain_in=inch
 
 Const Datum = 1500 ' distance to the floor/bottom (depth = 0) in mm
 Const Datum_p = 1500 ' distance to ground in pond (depth = 0) in mm
+
 Const D_orf = 1*25.4 'diameter of the orifice in mm
 Const Ang_weir = 120 ' Angle of the weir in degrees
 Const H_gap = 7.25*25.4 ' Distance between floor and bottom of weir in mm
@@ -64,13 +69,14 @@ Const Sampler_flow_thresh = 129 'flow threshold for sample to be collected in ft
 
 DataTable(FiveMinute,True,-1)
   DataInterval(0,5,Min,10)
-  TableFile("CRD:Sweetwater_Inflow_rain",64,-1,0,60,Min,0,0)
+  TableFile("CRD:Sweetwater_Inflow_rain",64,-1,0,1,Day,0,0)
 	Average(1,Temp_C,FP2,False)
 	Average(1,Range_mm,FP2,False)
 	Average(1,Depth_mm,FP2,False)
 	Average(1,Flow_total,FP2,False)
 	Average(1,Range_mm_p,FP2,False)
 	Average(1,Depth_mm_p,FP2,False)
+	Totalize(1,Rain_in,FP2,False)
 EndTable
 
 'Main Program
@@ -86,6 +92,9 @@ BeginProg
 		PanelTemp(PTemp_C,60)
 		'Type T Thermocouple measurements 'Temp_C'
 		TCDiff(Temp_C,1,mv200C,1,TypeT,PTemp_C,True,0,60,1,0)
+		
+    'Get rain measurement
+    PulseCount(Rain_in,1,P1,1,0,0.01,0)
 
     ' Bring in data from range sensors and calculate depths
 		SerialInRecord(ComC1,Range_mm_st,82,0,&H0D,Num_bytes,00) 'Weir sensor
