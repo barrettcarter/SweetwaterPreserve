@@ -132,7 +132,7 @@ BeginProg
       Delay(1,25,1)
       SWVX(VX1,0,1)
 '      WriteIO( &B10, &B10 )  'Set bit 2 (C2) high
-'      Flow_cum = 0  'Reset cumulative flow
+      Flow_cum = 0  'Reset cumulative flow
 '    Else                'Is it false
 '      WriteIO( &B10, &B00 ) 'Set C2 low
     EndIf
