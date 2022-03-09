@@ -14,6 +14,15 @@ Public PTemp_C
 Public Temp_C
 Public Flow_cum_dt As Float
 
+'Pond Variables
+Public Range_mm_st_p As String * 100
+Public Num_bytes_p
+Public Range_mm_p As Float
+Public Depth_mm_p As Float
+
+'Rain Variables
+Public Rain_in
+
 'Variables repeated for each cell
 'Cell 1
 Public Range_mm_st_1 As String * 100
@@ -120,27 +129,37 @@ Const C_orf = 0.6 ' Orifice discharge coefficient
 Const D_orf = 5/16*25.4 'diameter of the orifice in mm
 Const H_min = 10 ' minimum depth to begin calculating flow in mm
 
+'Pond
+Const Datum_p = 5*12*25.4 'Distance to pond bottom in mm
+
 'Cell 1
 Const H_gap_1 = 9*25.4 ' Distance between floor and bottom of weir in mm
-Const Datum_1 = 1500 ' distance to the floor/bottom (depth = 0) in mm
+Const Datum_1 = 13*25.4 ' distance to the floor/bottom (depth = 0) in mm
 
 'Cell 2
 Const H_gap_2 = 9*25.4 ' Distance between floor and bottom of weir in mm
-Const Datum_2 = 1500 ' distance to the floor/bottom (depth = 0) in mm
+Const Datum_2 = 13*25.4 ' distance to the floor/bottom (depth = 0) in mm
 
 'Cell 3
 Const H_gap_3 = 3*25.4 ' Distance between floor and bottom of weir in mm
-Const Datum_3 = 1500 ' distance to the floor/bottom (depth = 0) in mm
+Const Datum_3 = 7*25.4 ' distance to the floor/bottom (depth = 0) in mm
 
 'Cell 4
 Const H_gap_4 = 3*25.4 ' Distance between floor and bottom of weir in mm
-Const Datum_4 = 1500 ' distance to the floor/bottom (depth = 0) in mm
+Const Datum_4 = 7*25.4 ' distance to the floor/bottom (depth = 0) in mm
 
 'Define Data Tables
 DataTable(FiveMinute,True,-1)
   DataInterval(0,5,Min,10)
   TableFile("CRD:Sweetwater_Outflow",64,-1,0,1,Day,0,0)
-	Average(1,Temp_C,FP2,False)
+	
+  Average(1,Temp_C,FP2,False)
+	Average(1,BattV,FP2,False)
+	
+  Totalize(1,Rain_in,FP2,False)
+  
+  Average(1,Range_mm_p,FP2,False)
+  Average(1,Depth_mm_p,FP2,False)
 	
 	Average(1,Range_mm_1,FP2,False)
 	Average(1,Depth_mm_1,FP2,False)
