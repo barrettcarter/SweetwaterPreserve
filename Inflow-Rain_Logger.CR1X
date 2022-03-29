@@ -1,5 +1,12 @@
 'CR1000X Series
-'Created by Short Cut (4.4)
+'Sweetwater Bioretention Project - Gainesville, FL
+'written by J. Barrett Carter
+'March 9, 2022
+
+'This is a measurement and control program written to collect flow-weighted
+'samples from the inflow in the Sweetwater Bioretention Project.
+
+'The program will also be used to collect rain data.
 
 'Declare Variables and Units
 'General Variables
@@ -20,12 +27,6 @@ Public Flow_orf As Float
 Public Flow_cum = 0.0
 Public Flow_cum_dt As Float
 
-'Pond Variables
-Public Range_mm_st_p As String * 100
-Public Num_bytes_p
-Public Range_mm_p As Float
-Public Depth_mm_p As Float
-
 'Rain Variables
 Public Rain_in
 
@@ -42,21 +43,15 @@ Units Flow_orf = cfs
 Units Flow_cum = cf
 Units Flow_cum_dt = Sec
 
-Units Range_mm_st_p = mm
-Units Num_bytes_p = bytes
-Units Range_mm_p = mm
-Units Depth_mm_p = mm
-
 Units Rain_in=inch
 
-Const Datum = 1500 ' distance to the floor/bottom (depth = 0) in mm
-Const Datum_p = 1500 ' distance to ground in pond (depth = 0) in mm
+Const Datum = 4*12*25.4 ' distance to the floor/bottom (depth = 0) in mm
 
 Const D_orf = 1*25.4 'diameter of the orifice in mm
 Const Ang_weir = 120 ' Angle of the weir in degrees
 Const H_gap = 7.25*25.4 ' Distance between floor and bottom of weir in mm
-Const H_orf = 13 ' Distance between floor and bottom of orifice in mm
-Const H_min = 30 'Minimum water depth to calculate flow in mm
+Const H_orf = 25.4 ' Distance between floor and bottom of orifice in mm
+Const H_min = 50 'Minimum water depth to calculate flow in mm
 Const C_orf = 0.6 ' Orifice discharge coefficient
 Const Dens_water = 1000 ' density of water in kg/m^3
 Const g = 9.81 ' acceleration due to gravity in kg m/s^2
@@ -69,21 +64,20 @@ Const Sampler_flow_thresh = 129 'flow threshold for sample to be collected in ft
 'Define Data Tables
 
 DataTable(FiveMinute,True,-1)
-  DataInterval(0,5,Min,10)
+  DataInterval(0,5,Min,0)
   TableFile("CRD:Sweetwater_Inflow_rain",64,-1,0,1,Day,0,0)
 	Average(1,Temp_C,FP2,False)
+	Average(1,PTemp_C,FP2,False)
+	Average(1,BattV,FP2,False)
 	Average(1,Range_mm,FP2,False)
 	Average(1,Depth_mm,FP2,False)
 	Average(1,Flow_total,FP2,False)
-	Average(1,Range_mm_p,FP2,False)
-	Average(1,Depth_mm_p,FP2,False)
 	Totalize(1,Rain_in,FP2,False)
 EndTable
 
 'Main Program
 BeginProg
   SerialOpen(ComC1,9600,16,0,100)
-  SerialOpen(ComC3,9600,16,0,100)
   'Timer(1,uSec,0)
 	'Main Scan
 	Scan(10,Sec,3,0)
@@ -101,10 +95,6 @@ BeginProg
 		SerialInRecord(ComC1,Range_mm_st,82,0,&H0D,Num_bytes,00) 'Weir sensor
 		Range_mm = Range_mm_st
 		Depth_mm = Datum - Range_mm
-		
-  	SerialInRecord(ComC3,Range_mm_st_p,82,0,&H0D,Num_bytes_p,00) 'Pond sensor
-		Range_mm_p = Range_mm_st_p
-		Depth_mm_p = Datum_p - Range_mm_p
 		
     ' Calculate flow rate
     If Depth_mm < H_min Then
@@ -135,7 +125,7 @@ BeginProg
       Flow_cum += Flow_total*Flow_cum_dt
     EndIf
     If Flow_cum > Sampler_flow_thresh Then
-      PulsePort(C5,25000)
+      PulsePort(C3,35000)
       Flow_cum = 0
     EndIf
 		'Call Data Tables and Store Data
