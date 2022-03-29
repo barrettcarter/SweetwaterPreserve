@@ -116,8 +116,8 @@ Units Flow_cum_4 = cf
 
 'Define Constants
 'General
-Const Ang_weir = 60 ' Angle of the weir in degrees
 Const Sampler_flow_thresh = 16 'flow threshold for sample to be collected in ft^3
+Const Ang_weir = 60 ' Angle of the weir in degrees
 Const Dens_water = 1000 ' density of water in kg/m^3
 Const g = 9.81 ' acceleration due to gravity in kg m/s^2
 Const C_weir = 0.607165052-0.000874466963*Ang_weir+0.00000610393334*Ang_weir^2
