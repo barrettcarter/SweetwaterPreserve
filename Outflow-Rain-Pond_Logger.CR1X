@@ -153,7 +153,7 @@ Const Datum_4 = 7*25.4 ' distance to the floor/bottom (depth = 0) in mm
 
 'Define Data Tables
 DataTable(FiveMinute,True,-1)
-  DataInterval(0,5,Min,10)
+  DataInterval(0,5,Min,0)
   TableFile("CRD:Sweetwater_Outflow",64,-1,0,1,Day,0,0)
 	
   Average(1,Temp_C,FP2,False)

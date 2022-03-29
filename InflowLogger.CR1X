@@ -23,7 +23,7 @@ Public Depth_weir As Float
 Public Flow_total As Float
 Public Flow_weir As Float
 Public Flow_orf As Float
-Public Flow_cum = 0.0
+Public Flow_cum As Float
 Public Flow_cum_dt As Float
 
 Units BattV=Volts
@@ -58,7 +58,7 @@ Const Sampler_flow_thresh = 129 'flow threshold for sample to be collected in ft
 'Define Data Tables
 
 DataTable(FiveMinute,True,-1)
-  DataInterval(0,5,Min,10)
+  DataInterval(0,5,Min,0)
   TableFile("CRD:Sweetwater_Inflow_rain",64,-1,0,1,Day,0,0)
 	Average(1,Temp_C,FP2,False)
 	Average(1,PTemp_C,FP2,False)
@@ -115,7 +115,7 @@ BeginProg
       Flow_cum += Flow_total*Flow_cum_dt
     EndIf
     If Flow_cum > Sampler_flow_thresh Then
-      PulsePort(C5,25000)
+      PulsePort(C5,35000)
       Flow_cum = 0
     EndIf
 		'Call Data Tables and Store Data
