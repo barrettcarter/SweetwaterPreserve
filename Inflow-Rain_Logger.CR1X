@@ -45,7 +45,7 @@ Units Flow_cum_dt = Sec
 
 Units Rain_in=inch
 
-Const Datum = 4*12*25.4 ' distance to the floor/bottom (depth = 0) in mm
+Const Datum = 1208 ' distance to the floor/bottom (depth = 0) in mm
 
 Const D_orf = 1*25.4 'diameter of the orifice in mm
 Const Ang_weir = 120 ' Angle of the weir in degrees

@@ -39,7 +39,7 @@ Units Flow_orf = cfs
 Units Flow_cum = cf
 Units Flow_cum_dt = Sec
 
-Const Datum = 4*12*25.4 ' distance to the floor/bottom (depth = 0) in mm
+Const Datum = 600 ' distance to the floor/bottom (depth = 0) in mm
 
 Const D_orf = 1*25.4 'diameter of the orifice in mm
 Const Ang_weir = 120 ' Angle of the weir in degrees
@@ -70,7 +70,7 @@ EndTable
 
 'Main Program
 BeginProg
-  SerialOpen(ComC1,9600,16,0,100)
+  SerialOpen(ComC5,9600,16,0,100,1)
   'Timer(1,uSec,0)
 	'Main Scan
 	Scan(10,Sec,3,0)
@@ -82,7 +82,7 @@ BeginProg
 		TCDiff(Temp_C,1,mv200C,1,TypeT,PTemp_C,True,0,60,1,0)
 
     ' Bring in data from range sensors and calculate depths
-		SerialInRecord(ComC1,Range_mm_st,82,0,&H0D,Num_bytes,00) 'Weir sensor
+		SerialInRecord(ComC5,Range_mm_st,82,0,&H0D,Num_bytes,00) 'Weir sensor
 		Range_mm = Range_mm_st
 		Depth_mm = Datum - Range_mm
 		
@@ -115,7 +115,7 @@ BeginProg
       Flow_cum += Flow_total*Flow_cum_dt
     EndIf
     If Flow_cum > Sampler_flow_thresh Then
-      PulsePort(C5,35000)
+      'PulsePort(C5,35000)
       Flow_cum = 0
     EndIf
 		'Call Data Tables and Store Data

@@ -130,23 +130,23 @@ Const pi = 3.14159
 Const H_min = 5 ' minimum depth to begin calculating flow in mm
 
 'Pond
-Const Datum_p = 5*12*25.4 'Distance to pond bottom in mm
+Const Datum_p = 1400 'Distance to pond bottom in mm
 
 'Cell 1
-Const H_gap_1 = 9*25.4 ' Distance between floor and bottom of weir in mm
-Const Datum_1 = 13*25.4 ' distance to the floor/bottom (depth = 0) in mm
+Const H_gap_1 = 192 ' Distance between floor and bottom of weir in mm
+Const Datum_1 = (13+12)*25.4 ' distance to the floor/bottom (depth = 0) in mm
 
 'Cell 2
-Const H_gap_2 = 9*25.4 ' Distance between floor and bottom of weir in mm
-Const Datum_2 = 13*25.4 ' distance to the floor/bottom (depth = 0) in mm
+Const H_gap_2 = 192 ' Distance between floor and bottom of weir in mm
+Const Datum_2 = (13+12)*25.4 ' distance to the floor/bottom (depth = 0) in mm
 
 'Cell 3
-Const H_gap_3 = 3*25.4 ' Distance between floor and bottom of weir in mm
-Const Datum_3 = 7*25.4 ' distance to the floor/bottom (depth = 0) in mm
+Const H_gap_3 = 32.6 ' Distance between floor and bottom of weir in mm
+Const Datum_3 = (7+12)*25.4 ' distance to the floor/bottom (depth = 0) in mm
 
 'Cell 4
-Const H_gap_4 = 3*25.4 ' Distance between floor and bottom of weir in mm
-Const Datum_4 = 7*25.4 ' distance to the floor/bottom (depth = 0) in mm
+Const H_gap_4 = 32.6 ' Distance between floor and bottom of weir in mm
+Const Datum_4 = (7+12)*25.4 ' distance to the floor/bottom (depth = 0) in mm
 
 'Define Data Tables
 DataTable(FiveMinute,True,-1)
@@ -181,8 +181,8 @@ EndTable
 BeginProg
   SerialOpen(ComC1,9600,16,0,100) 'for cell 1 sensor
   SerialOpen(ComC3,9600,16,0,100) 'for cell 2 sensor
-  SerialOpen(ComC5,9600,16,0,100) 'for cell 3 sensor
-  SerialOpen(ComC7,9600,16,0,100) 'for cell 4 sensor
+  SerialOpen(ComC5,9600,16,0,100,1) 'for cell 3 sensor
+  SerialOpen(ComC7,9600,16,0,100,1) 'for cell 4 sensor
 	'Main Scan
 	Scan(10,Sec,3,0)
 		'Default CR1000X Datalogger Battery Voltage measurement 'BattV'
@@ -194,10 +194,12 @@ BeginProg
     
     ' Bring in data from range sensors and calculate depth
     VoltSe (Range_mm_p,1,mv5000C,3,1,0,15000,1.024,0) 'for pond sensor
-		SerialInRecord(ComC1,Range_mm_st_1,82,0,&H0D,Num_bytes_1,00) 'cell 1
+    SerialInRecord(ComC5,Range_mm_st_3,82,0,&H0D,Num_bytes_3,00) 'cell 3
+		SerialInRecord(ComC7,Range_mm_st_4,82,0,&H0D,Num_bytes_4,00) 'cell 4		
+
+    SerialInRecord(ComC1,Range_mm_st_1,82,0,&H0D,Num_bytes_1,00) 'cell 1
 		SerialInRecord(ComC3,Range_mm_st_2,82,0,&H0D,Num_bytes_2,00) ' cell 2
-		SerialInRecord(ComC5,Range_mm_st_3,82,0,&H0D,Num_bytes_3,00) 'cell 3
-		SerialInRecord(ComC7,Range_mm_st_4,82,0,&H0D,Num_bytes_4,00) 'cell 4
+
 		
     Range_mm_1 = Range_mm_st_1
 		Depth_mm_1 = Datum_1 - Range_mm_1
