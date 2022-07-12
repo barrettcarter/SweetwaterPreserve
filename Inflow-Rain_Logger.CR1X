@@ -93,7 +93,10 @@ BeginProg
 
     ' Bring in data from range sensors and calculate depths
 		SerialInRecord(ComC1,Range_mm_st,82,0,&H0D,Num_bytes,00) 'Weir sensor
-		Range_mm = Range_mm_st
+		
+    If Range_mm_st <> NAN Then
+      Range_mm = Range_mm_st
+    EndIf
 		Depth_mm = Datum - Range_mm
 		
     ' Calculate flow rate
