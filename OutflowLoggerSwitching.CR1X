@@ -1,0 +1,377 @@
+'CR1000X Series
+'This is the program for collecting flow-weighted samples from the
+'stormwater entering the curb inlet upstream of the bioretention pond.
+
+'The program will also be used to measure water level in the pond and to
+'collect rain data.
+
+SequentialMode
+
+'Declare Variables and Units
+'General Variables
+Public BattV
+Public PTemp_C
+Public Temp_C
+Public Flow_cum_dt As Float
+Public Cleaning                'Edit: this switches the 12v port on the logger which will run all sensors simultaneously for cleaning purposes (THIS IS OPTIONAL)
+Public Sensor_data_in          'Edit: This recieves sensor data for all 4 sensors, depending on which Switch_# is HIGH will determine data collected NOTE: This is covered by the serial open command, read note below.
+
+'Variables repeated for each cell
+'Cell 1
+Public Switch_1           'Edit: this Switches the relay board to power sensor in cell 1 and recieve data collected (same for 2,3 and 4 respectively) NOTE: This might be covered with portset command, not sure how to set a varialbe equal to a pin
+Public Range_mm_st_1 As String * 100
+Public Num_bytes_1
+Public Range_mm_1 As Float
+Public Depth_mm_1 As Float
+Public Depth_orf_1 As Float
+Public Depth_weir_1 As Float
+Public Flow_total_1 As Float
+Public Flow_weir_1 As Float
+Public Flow_orf_1 As Float
+Public Flow_cum_1 = 0.0
+
+'Cell 2
+Public Switch_2
+Public Range_mm_st_2 As String * 100
+Public Num_bytes_2
+Public Range_mm_2 As Float
+Public Depth_mm_2 As Float
+Public Depth_orf_2 As Float
+Public Depth_weir_2 As Float
+Public Flow_total_2 As Float
+Public Flow_weir_2 As Float
+Public Flow_orf_2 As Float
+Public Flow_cum_2 = 0.0
+
+'Cell 3
+Public Switch_3
+Public Range_mm_st_3 As String * 100
+Public Num_bytes_3
+Public Range_mm_3 As Float
+Public Depth_mm_3 As Float
+Public Depth_orf_3 As Float
+Public Depth_weir_3 As Float
+Public Flow_total_3 As Float
+Public Flow_weir_3 As Float
+Public Flow_orf_3 As Float
+Public Flow_cum_3 = 0.0
+
+'Cell 4
+Public Switch_4
+Public Range_mm_st_4 As String * 100
+Public Num_bytes_4
+Public Range_mm_4 As Float
+Public Depth_mm_4 As Float
+Public Depth_orf_4 As Float
+Public Depth_weir_4 As Float
+Public Flow_total_4 As Float
+Public Flow_weir_4 As Float
+Public Flow_orf_4 As Float
+Public Flow_cum_4 = 0.0
+
+'Define Units
+Units BattV=Volts
+Units PTemp_C=Deg C
+Units Temp_C=Deg C
+Units Flow_cum_dt = Sec
+
+Units Range_mm_1 = mm
+Units Depth_mm_1 = mm
+Units Depth_orf_1 = mm
+Units Depth_weir_1 = mm
+Units Flow_total_1 = cfs
+Units Flow_weir_1 = cfs
+Units Flow_orf_1 = cfs
+Units Flow_cum_1 = cf
+
+Units Range_mm_2 = mm
+Units Depth_mm_2 = mm
+Units Depth_orf_2 = mm
+Units Depth_weir_2 = mm
+Units Flow_total_2 = cfs
+Units Flow_weir_2 = cfs
+Units Flow_orf_2 = cfs
+Units Flow_cum_2 = cf
+
+Units Range_mm_3 = mm
+Units Depth_mm_3 = mm
+Units Depth_orf_3 = mm
+Units Depth_weir_3 = mm
+Units Flow_total_3 = cfs
+Units Flow_weir_3 = cfs
+Units Flow_orf_3 = cfs
+Units Flow_cum_3 = cf
+
+Units Range_mm_4 = mm
+Units Depth_mm_4 = mm
+Units Depth_orf_4 = mm
+Units Depth_weir_4 = mm
+Units Flow_total_4 = cfs
+Units Flow_weir_4 = cfs
+Units Flow_orf_4 = cfs
+Units Flow_cum_4 = cf
+
+'Define Constants
+'General
+Const Ang_weir = 60 ' Angle of the weir in degrees
+Const Sampler_flow_thresh = 16 'flow threshold for sample to be collected in ft^3
+Const Dens_water = 1000 ' density of water in kg/m^3
+Const g = 9.81 ' acceleration due to gravity in kg m/s^2
+Const C_weir = 0.607165052-0.000874466963*Ang_weir+0.00000610393334*Ang_weir^2
+Const k_weir = 0.0144902648 - 0.00033955535*Ang_weir  + 0.00000329819003*Ang_weir^2 _
+- 0.0000000106215442*Ang_weir^3
+Const pi = 3.14159
+Const H_orf = 0 ' Distance between floor and bottom of orifice in mm
+Const C_orf = 0.6 ' Orifice discharge coefficient
+Const D_orf = 5/16*25.4 'diameter of the orifice in mm
+Const H_min = 10 ' minimum depth to begin calculating flow in mm
+
+'Cell 1
+Const H_gap_1 = 9*25.4 ' Distance between floor and bottom of weir in mm
+Const Datum_1 = 1500 ' distance to the floor/bottom (depth = 0) in mm
+
+'Cell 2
+Const H_gap_2 = 9*25.4 ' Distance between floor and bottom of weir in mm
+Const Datum_2 = 1500 ' distance to the floor/bottom (depth = 0) in mm
+
+'Cell 3
+Const H_gap_3 = 3*25.4 ' Distance between floor and bottom of weir in mm
+Const Datum_3 = 1500 ' distance to the floor/bottom (depth = 0) in mm
+
+'Cell 4
+Const H_gap_4 = 3*25.4 ' Distance between floor and bottom of weir in mm
+Const Datum_4 = 1500 ' distance to the floor/bottom (depth = 0) in mm
+
+'Define Data Tables
+DataTable(FiveMinute,True,-1)
+  DataInterval(0,5,Min,10)
+  TableFile("CRD:Sweetwater_Outflow",64,-1,0,1,Day,0,0)
+	Average(1,Temp_C,FP2,False)
+	
+  
+	Average(1,Range_mm_1,FP2,False)
+	Average(1,Depth_mm_1,FP2,False)
+	Average(1,Flow_total_1,FP2,False)
+	
+	Average(1,Range_mm_2,FP2,False)
+	Average(1,Depth_mm_2,FP2,False)
+	Average(1,Flow_total_2,FP2,False)
+	
+  Average(1,Range_mm_3,FP2,False)
+	Average(1,Depth_mm_3,FP2,False)
+	Average(1,Flow_total_3,FP2,False)
+	
+  Average(1,Range_mm_4,FP2,False)
+	Average(1,Depth_mm_4,FP2,False)
+	Average(1,Flow_total_4,FP2,False)
+EndTable
+
+
+'Questions to be answered: how do the scan interval and the portset intervals intereact with their respective data averaging.
+'Main Program
+BeginProg
+  SerialOpen(ComC1,9600,16,0,100) 'for cell 1 sensor
+                                    'Edit: we will be using one com for all 4 sensor data collections 4 coms will need to be used via portset or writeio commands
+'  SerialOpen(ComC3,9600,16,0,100) 'for cell 2 sensor    
+'  SerialOpen(ComC5,9600,16,0,100) 'for cell 3 sensor
+'  SerialOpen(ComC7,9600,16,0,100) 'for cell 4 sensor
+
+	'Main Scan                         Edit: (this will need to mesh with the sensing requirments of the switching sensors (>=7secx4)
+	Scan(10,Sec,3,0)
+		'Default CR1000X Datalogger Battery Voltage measurement 'BattV'
+		Battery(BattV)
+		'Default CR1000X Datalogger Wiring Panel Temperature measurement 'PTemp_C'
+		PanelTemp(PTemp_C,60)
+		'Type T Thermocouple measurements 'Temp_C'
+		TCDiff(Temp_C,1,mv200C,1,TypeT,PTemp_C,True,0,60,1,0)
+    
+    ' Bring in data from range sensor and calculate depth.
+                                     'Edit: We will bring in data from one com channel now so the range data will depend on the portset per scan sequence. this will be com channel 5 since 1 2 3 & 4 will be used for switching the relays
+    PortSet(C1,1)           
+		                                 'Note:Each Trigger will need a couple delays. One for ranging and one for self cleaning. 
+		Delay (1,140,mSec)               'Note: Data sheet page 10 shows the timing sequence for the data styles 
+    SerialInRecord(ComC5,Range_mm_st_1,82,0,&H0D,Num_bytes_1,00)
+'		SerialInRecord(ComC3,Range_mm_st_2,82,0,&H0D,Num_bytes_2,00)
+'		SerialInRecord(ComC5,Range_mm_st_3,82,0,&H0D,Num_bytes_3,00)
+'		SerialInRecord(ComC7,Range_mm_st_4,82,0,&H0D,Num_bytes_4,00)
+
+    Range_mm_1 = Range_mm_st_1
+		Depth_mm_1 = Datum_1 - Range_mm_1
+		Delay(1,1418,mSec)              'Note: after 1818mS the serial data will have been collected and the self cleaning will have been completed
+    PortSet(C1,0)
+
+   'PortSet(Switch_2, HIGH)
+    PortSet(C2,1) 'sets command port 1 high
+    Delay (1,140,mSec)
+    SerialInRecord(ComC5,Range_mm_st_2,82,0,&H0D,Num_bytes_1,00)
+
+    Range_mm_2 = Range_mm_st_2
+		Depth_mm_2 = Datum_2 - Range_mm_2
+		Delay(1,1418,mSec)
+		PortSet(C2,0)
+
+    PortSet(C3,1)          
+    Delay (1,149,mSec)
+    SerialInRecord(ComC5,Range_mm_st_3,82,0,&H0D,Num_bytes_1,00)
+    
+    Range_mm_3 = Range_mm_st_3
+		Depth_mm_3 = Datum_3 - Range_mm_3
+		Delay(1,1418,mSec)
+		PortSet(C3,0)
+		
+    PortSet(C4,1) 
+    Delay(1,140,mSec)
+    SerialInRecord(ComC5,Range_mm_st_4,82,0,&H0D,Num_bytes_1,00)
+    
+    Range_mm_4 = Range_mm_st_4
+		Depth_mm_4 = Datum_4 - Range_mm_4
+		Delay(1,1418,mSec)
+		PortSet(C4,0)
+		
+    ' Calculate flow rates
+    'Cell 1
+    If Depth_mm_1 < H_min Then
+      Depth_weir_1 = 0
+      Depth_orf_1 = 0
+      Flow_weir_1 = 0
+      Flow_orf_1 = 0
+      
+    Else 
+      Depth_orf_1 = Depth_mm_1-H_orf
+      Flow_orf_1 = C_orf*pi/4*(D_orf/1000)^2*(2*Depth_orf_1/1000*Dens_water*g _
+      *Dens_water)^(1/2)/Dens_water*35.3
+      If Depth_mm_1 < H_gap_1 Then
+        Depth_weir_1 = 0
+        Flow_weir_1 = 0
+      Else
+        Depth_weir_1 = Depth_mm_1 - H_gap_1
+        Flow_weir_1 = 4.28*C_weir*TAN(Ang_weir*pi/180/2)*(Depth_weir_1/25.4/12+k_weir)^(5/2)
+      EndIf
+    EndIf
+    
+    Flow_total_1 = Flow_orf_1 + Flow_weir_1
+    
+    'Cell 2
+    If Depth_mm_2 < H_min Then
+      Depth_weir_2 = 0
+      Depth_orf_2 = 0
+      Flow_weir_2 = 0
+      Flow_orf_2 = 0
+      
+    Else 
+      Depth_orf_2 = Depth_mm_2-H_orf
+      Flow_orf_2 = C_orf*pi/4*(D_orf/1000)^2*(2*Depth_orf_2/1000*Dens_water*g _
+      *Dens_water)^(1/2)/Dens_water*35.3
+      If Depth_mm_2 < H_gap_2 Then
+        Depth_weir_2 = 0
+        Flow_weir_2 = 0
+      Else
+        Depth_weir_2 = Depth_mm_2 - H_gap_2
+        Flow_weir_2 = 4.28*C_weir*TAN(Ang_weir*pi/180/2)*(Depth_weir_2/25.4/12+k_weir)^(5/2)
+      EndIf
+    EndIf
+    
+    Flow_total_2 = Flow_orf_2 + Flow_weir_2
+    
+    'Cell 3
+    If Depth_mm_3 < H_min Then
+      Depth_weir_3 = 0
+      Depth_orf_3 = 0
+      Flow_weir_3 = 0
+      Flow_orf_3 = 0
+      
+    Else 
+      Depth_orf_3 = Depth_mm_3-H_orf
+      Flow_orf_3 = C_orf*pi/4*(D_orf/1000)^2*(2*Depth_orf_3/1000*Dens_water*g _
+      *Dens_water)^(1/2)/Dens_water*35.3
+      If Depth_mm_3 < H_gap_3 Then
+        Depth_weir_3 = 0
+        Flow_weir_3 = 0
+      Else
+        Depth_weir_3 = Depth_mm_3 - H_gap_3
+        Flow_weir_3 = 4.28*C_weir*TAN(Ang_weir*pi/180/2)*(Depth_weir_3/25.4/12+k_weir)^(5/2)
+      EndIf
+    EndIf
+    
+    Flow_total_3 = Flow_orf_3 + Flow_weir_3
+    
+    'Cell 4
+    If Depth_mm_4 < H_min Then
+      Depth_weir_4 = 0
+      Depth_orf_4 = 0
+      Flow_weir_4 = 0
+      Flow_orf_4 = 0
+      
+    Else 
+      Depth_orf_4 = Depth_mm_4-H_orf
+      Flow_orf_4 = C_orf*pi/4*(D_orf/1000)^2*(2*Depth_orf_4/1000*Dens_water*g _
+      *Dens_water)^(1/2)/Dens_water*35.3
+      If Depth_mm_4 < H_gap_4 Then
+        Depth_weir_4 = 0
+        Flow_weir_4 = 0
+      Else
+        Depth_weir_4 = Depth_mm_4 - H_gap_4
+        Flow_weir_4 = 4.28*C_weir*TAN(Ang_weir*pi/180/2)*(Depth_weir_4/25.4/12+k_weir)^(5/2)
+      EndIf
+    EndIf
+    
+    Flow_total_4 = Flow_orf_4 + Flow_weir_4
+    
+    'Flow accumulation
+    Flow_cum_dt = Timer(1,0,4)/10^6
+    Timer(1,0,2)
+    
+    'Cell 1
+    If Flow_total_1 <> NAN Then
+      Flow_cum_1 += Flow_total_1*Flow_cum_dt
+    EndIf
+    'Cell 2
+    If Flow_total_2 <> NAN Then
+      Flow_cum_2 += Flow_total_2*Flow_cum_dt
+    EndIf
+    'Cell 3
+    If Flow_total_3 <> NAN Then
+      Flow_cum_3 += Flow_total_3*Flow_cum_dt
+    EndIf
+    'Cell 4
+    If Flow_total_4 <> NAN Then
+      Flow_cum_4 += Flow_total_4*Flow_cum_dt
+    EndIf
+
+    'Trigger Autosamplers
+    'Cell 1
+    If Flow_cum_1 > Sampler_flow_thresh Then
+      SWVX(VX1,1,1)
+      Delay(1,25,1)
+      SWVX(VX1,0,1)
+      Flow_cum_1 = 0  'Reset cumulative flow
+    EndIf
+    
+    'Cell 2
+    If Flow_cum_2 > Sampler_flow_thresh Then
+      SWVX(VX2,1,1)
+      Delay(1,25,1)
+      SWVX(VX2,0,1)
+      Flow_cum_2 = 0  'Reset cumulative flow
+    EndIf
+    
+    'Cell 3
+    If Flow_cum_3 > Sampler_flow_thresh Then
+      SWVX(VX3,1,1)
+      Delay(1,25,1)
+      SWVX(VX3,0,1)
+      Flow_cum_3 = 0  'Reset cumulative flow
+    EndIf
+    
+    'Cell 4
+    If Flow_cum_4 > Sampler_flow_thresh Then
+      SWVX(VX4,1,1)
+      Delay(1,25,1)
+      SWVX(VX4,0,1)
+      Flow_cum_4 = 0  'Reset cumulative flow
+    EndIf
+    
+		'Call Data Tables and Store Data
+		CallTable FiveMinute
+	NextScan
+EndProg
