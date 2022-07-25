@@ -26,6 +26,7 @@ Public Flow_total_1 As Float
 Public Flow_weir_1 As Float
 Public Flow_orf_1 As Float
 Public Flow_cum_1 = 0.0
+Public Samples_collected_1
 
 'Cell 2
 Public Range_mm_st_2 As String * 100
@@ -38,6 +39,7 @@ Public Flow_total_2 As Float
 Public Flow_weir_2 As Float
 Public Flow_orf_2 As Float
 Public Flow_cum_2 = 0.0
+Public Samples_collected_2
 
 'Cell 3
 Public Range_mm_st_3 As String * 100
@@ -50,6 +52,7 @@ Public Flow_total_3 As Float
 Public Flow_weir_3 As Float
 Public Flow_orf_3 As Float
 Public Flow_cum_3 = 0.0
+Public Samples_collected_3
 
 'Cell 4
 Public Range_mm_st_4 As String * 100
@@ -62,6 +65,7 @@ Public Flow_total_4 As Float
 Public Flow_weir_4 As Float
 Public Flow_orf_4 As Float
 Public Flow_cum_4 = 0.0
+Public Samples_collected_4
 
 'Pond
 Public Range_mm_st_p As String * 100
@@ -113,39 +117,40 @@ Units Flow_cum_4 = cf
 
 'Define Constants
 'General
-Const Ang_weir = 60 ' Angle of the weir in degrees
-Const Sampler_flow_thresh = 16 'flow threshold for sample to be collected in ft^3
-Const Dens_water = 1000 ' density of water in kg/m^3
-Const g = 9.81 ' acceleration due to gravity in kg m/s^2
-Const C_weir = 0.607165052-0.000874466963*Ang_weir+0.00000610393334*Ang_weir^2
-Const k_weir = 0.0144902648 - 0.00033955535*Ang_weir  + 0.00000329819003*Ang_weir^2 _
+Const Ang_weir As Float = 60 ' Angle of the weir in degrees
+Const Sampler_flow_thresh As Float = 16 'flow threshold for sample to be collected in ft^3
+Const Dens_water As Float = 1000 ' density of water in kg/m^3
+Const g As Float = 9.81 ' acceleration due to gravity in kg m/s^2
+Const C_weir As Float = 0.607165052-0.000874466963*Ang_weir+0.00000610393334*Ang_weir^2
+Const k_weir As Float = 0.0144902648 - 0.00033955535*Ang_weir  + 0.00000329819003*Ang_weir^2 _
 - 0.0000000106215442*Ang_weir^3
-Const pi = 3.14159
-Const H_orf = 0 ' Distance between floor and bottom of orifice in mm
-Const C_orf = 0.6 ' Orifice discharge coefficient
-Const D_orf = 5/16*25.4 'diameter of the orifice in mm
-Const H_min = 10 ' minimum depth to begin calculating flow in mm
-Const Delay_1 = 2 ' for sensor multiplexing
-Const Delay_2 = 7 ' for sensor multiplexing
+Const pi As Float = 3.14159
+Const H_orf As Float = 0 ' Distance between floor and bottom of orifice in mm
+Const C_orf As Float = 0.6 ' Orifice discharge coefficient
+Const D_orf As Float = 5/16*25.4 'diameter of the orifice in mm
+Const H_min As Float = 2 ' minimum depth to begin calculating flow in mm
+Const H_max As Float = 4*25.4 ' maximum depth of weir in mm
+Const Delay_1 As Float = 2 ' for sensor multiplexing
+Const Delay_2 As Float = 7 ' for sensor multiplexing
 
 'Cell 1
-Const H_gap_1 = 192 ' Distance between floor and bottom of weir in mm
-Const Datum_1 = 25*25.4 ' distance to the floor/bottom (depth = 0) in mm
+Const H_gap_1 As Float = (13-4)*25.4 ' Distance between floor and bottom of weir in mm
+Const Datum_1 As Float = (13+12)*25.4 ' distance to the floor/bottom (depth = 0) in mm
 
 'Cell 2
-Const H_gap_2 = 192 ' Distance between floor and bottom of weir in mm
-Const Datum_2 = 25*25.4 ' distance to the floor/bottom (depth = 0) in mm
+Const H_gap_2 As Float = (13-4)*25.4 ' Distance between floor and bottom of weir in mm
+Const Datum_2 As Float = (13+12)*25.4 ' distance to the floor/bottom (depth = 0) in mm
 
 'Cell 3
-Const H_gap_3 = 76.2 ' Distance between floor and bottom of weir in mm. This may not be accurate
-Const Datum_3 = 19*25.4 ' distance to the floor/bottom (depth = 0) in mm
+Const H_gap_3 As Float = (7-4)*25.4 ' Distance between floor and bottom of weir in mm. This may not be accurate
+Const Datum_3 As Float = (7+12)*25.4 ' distance to the floor/bottom (depth = 0) in mm
 
 'Cell 4
-Const H_gap_4 = 76.2 ' Distance between floor and bottom of weir in mm. This may not be accurate
-Const Datum_4 = 19*25.4 ' distance to the floor/bottom (depth = 0) in mm
+Const H_gap_4 As Float = (7-4)*25.4 ' Distance between floor and bottom of weir in mm. This may not be accurate
+Const Datum_4 As Float = (7+12)*25.4 ' distance to the floor/bottom (depth = 0) in mm
 
 'Pond
-Const Datum_p = 1400 ' distance to the floor/bottom (depth = 0) in mm
+Const Datum_p As Float = 1400 ' distance to the floor/bottom (depth = 0) in mm
 
 'Define Data Tables
 DataTable(FiveMinute,True,-1)
@@ -153,26 +158,34 @@ DataTable(FiveMinute,True,-1)
   TableFile("CRD:Sweetwater_Outflow",64,-1,0,1,Day,0,0)
 	Average(1,Temp_C,FP2,False)
 	Average(1,BattV,FP2,False)
-	
   
 	Average(1,Range_mm_1,FP2,False)
 	Average(1,Depth_mm_1,FP2,False)
+	Average(1,Depth_weir_1,FP2,False)
 	Average(1,Flow_total_1,FP2,False)
+	Totalize(1,Samples_collected_1,FP2,False)
 	
 	Average(1,Range_mm_2,FP2,False)
 	Average(1,Depth_mm_2,FP2,False)
+	Average(1,Depth_weir_2,FP2,False)
 	Average(1,Flow_total_2,FP2,False)
+	Totalize(1,Samples_collected_2,FP2,False)
 	
   Average(1,Range_mm_3,FP2,False)
 	Average(1,Depth_mm_3,FP2,False)
+	Average(1,Depth_weir_3,FP2,False)
 	Average(1,Flow_total_3,FP2,False)
+	Totalize(1,Samples_collected_3,FP2,False)
 	
   Average(1,Range_mm_4,FP2,False)
 	Average(1,Depth_mm_4,FP2,False)
+	Average(1,Depth_weir_4,FP2,False)
 	Average(1,Flow_total_4,FP2,False)
+	Totalize(1,Samples_collected_4,FP2,False)
 	
   Average(1,Range_mm_p,FP2,False)
 	Average(1,Depth_mm_p,FP2,False)
+	
 EndTable
 
 
@@ -195,11 +208,17 @@ BeginProg
 		PanelTemp(PTemp_C,60)
 		'Type T Thermocouple measurements 'Temp_C'
 		TCDiff(Temp_C,1,mv200C,1,TypeT,PTemp_C,True,0,60,1,0)
+		
+    'Reset sample count
+    Samples_collected_1 = 0
+    Samples_collected_2 = 0
+    Samples_collected_3 = 0
+    Samples_collected_4 = 0
     
     ' Bring in data from range sensor and calculate depth.
-                                     'Edit: We will bring in data from one com channel now so the range data will depend on the portset per scan sequence. this will be com channel 5 since 1 2 3 & 4 will be used for switching the relays
+    'Edit: We will bring in data from one com channel now so the range data will depend on the portset per scan sequence. this will be com channel 5 since 1 2 3 & 4 will be used for switching the relays
     PortSet(C1,1)           
-		                                 'Note:Each Trigger will need a couple delays. One for ranging and one for self cleaning. 
+		'Note:Each Trigger will need a couple delays. One for ranging and one for self cleaning. 
 		Delay (2,Delay_1,Sec)               'Note: Data sheet page 10 shows the timing sequence for the data styles 
     SerialInRecord(ComC5,Range_mm_st_1,82,0,&H0D,Num_bytes_1,00)
 '		SerialInRecord(ComC3,Range_mm_st_2,82,0,&H0D,Num_bytes_2,00)
@@ -352,22 +371,26 @@ BeginProg
 '      Flow_cum_4 += Flow_total_4*Flow_cum_dt
 '    EndIf
 
-If Depth_mm_1 < H_min Then
+    If Depth_mm_1 < H_min Then
       Depth_weir_1 = 0
       Depth_orf_1 = 0
       Flow_weir_1 = 0
       Flow_orf_1 = 0
-      
-    Else 
-      If Depth_mm_1 < (H_gap_1+2) Then
-        Depth_weir_1 = 0
-        Flow_weir_1 = 0
-        Flow_orf_1 = 0
-      Else
-        Depth_weir_1 = Depth_mm_1 - H_gap_1
-        Flow_weir_1 = 4.28*C_weir*TAN(Ang_weir*pi/180/2)*(Depth_weir_1/25.4/12+k_weir)^(5/2)
-        Flow_orf_1 = 0
-      EndIf
+          
+    ElseIf Depth_mm_1 < (H_gap_1+H_min) Then
+      Depth_weir_1 = 0
+      Flow_weir_1 = 0
+      Flow_orf_1 = 0
+          
+    ElseIf Depth_mm_1 < (H_gap_1+H_max) Then
+      Depth_weir_1 = Depth_mm_1 - H_gap_1
+      Flow_weir_1 = 4.28*C_weir*TAN(Ang_weir*pi/180/2)*(Depth_weir_1/25.4/12+k_weir)^(5/2)
+      Flow_orf_1 = 0
+    Else
+      Depth_weir_1 = H_max
+      Flow_weir_1 = 4.28*C_weir*TAN(Ang_weir*pi/180/2)*(Depth_weir_1/25.4/12+k_weir)^(5/2)
+      Flow_orf_1 = 0
+
     EndIf
     
     Flow_total_1 = Flow_orf_1 + Flow_weir_1
@@ -378,17 +401,21 @@ If Depth_mm_1 < H_min Then
       Depth_orf_2 = 0
       Flow_weir_2 = 0
       Flow_orf_2 = 0
-      
-    Else 
-      If Depth_mm_2 < (H_gap_2+2) Then
-        Depth_weir_2 = 0
-        Flow_weir_2 = 0
-        Flow_orf_2 = 0
-      Else
-        Depth_weir_2 = Depth_mm_2 - H_gap_2
-        Flow_weir_2 = 4.28*C_weir*TAN(Ang_weir*pi/180/2)*(Depth_weir_2/25.4/12+k_weir)^(5/2)
-        Flow_orf_2 = 0
-      EndIf
+          
+    ElseIf Depth_mm_2 < (H_gap_2+H_min) Then
+      Depth_weir_2 = 0
+      Flow_weir_2 = 0
+      Flow_orf_2 = 0
+          
+    ElseIf Depth_mm_2 < (H_gap_2+H_max) Then
+      Depth_weir_2 = Depth_mm_2 - H_gap_2
+      Flow_weir_2 = 4.28*C_weir*TAN(Ang_weir*pi/180/2)*(Depth_weir_2/25.4/12+k_weir)^(5/2)
+      Flow_orf_2 = 0
+    Else
+      Depth_weir_2 = H_max
+      Flow_weir_2 = 4.28*C_weir*TAN(Ang_weir*pi/180/2)*(Depth_weir_2/25.4/12+k_weir)^(5/2)
+      Flow_orf_2 = 0
+
     EndIf
     
     Flow_total_2 = Flow_orf_2 + Flow_weir_2
@@ -399,17 +426,21 @@ If Depth_mm_1 < H_min Then
       Depth_orf_3 = 0
       Flow_weir_3 = 0
       Flow_orf_3 = 0
-      
-    Else 
-      If Depth_mm_3 < (H_gap_3+2) Then
-        Depth_weir_3 = 0
-        Flow_weir_3 = 0
-        Flow_orf_3 = 0
-      Else
-        Depth_weir_3 = Depth_mm_3 - H_gap_3
-        Flow_weir_3 = 4.28*C_weir*TAN(Ang_weir*pi/180/2)*(Depth_weir_3/25.4/12+k_weir)^(5/2)
-        Flow_orf_3 = 0
-      EndIf
+          
+    ElseIf Depth_mm_3 < (H_gap_3+H_min) Then
+      Depth_weir_3 = 0
+      Flow_weir_3 = 0
+      Flow_orf_3 = 0
+          
+    ElseIf Depth_mm_3 < (H_gap_3+H_max) Then
+      Depth_weir_3 = Depth_mm_3 - H_gap_3
+      Flow_weir_3 = 4.28*C_weir*TAN(Ang_weir*pi/180/2)*(Depth_weir_3/25.4/12+k_weir)^(5/2)
+      Flow_orf_3 = 0
+    Else
+      Depth_weir_3 = H_max
+      Flow_weir_3 = 4.28*C_weir*TAN(Ang_weir*pi/180/2)*(Depth_weir_3/25.4/12+k_weir)^(5/2)
+      Flow_orf_3 = 0
+
     EndIf
     
     Flow_total_3 = Flow_orf_3 + Flow_weir_3
@@ -420,17 +451,21 @@ If Depth_mm_1 < H_min Then
       Depth_orf_4 = 0
       Flow_weir_4 = 0
       Flow_orf_4 = 0
-      
-    Else 
-      If Depth_mm_4 < (H_gap_4+2) Then
-        Depth_weir_4 = 0
-        Flow_weir_4 = 0
-        Flow_orf_4 = 0
-      Else
-        Depth_weir_4 = Depth_mm_4 - H_gap_4
-        Flow_weir_4 = 4.28*C_weir*TAN(Ang_weir*pi/180/2)*(Depth_weir_4/25.4/12+k_weir)^(5/2)
-        Flow_orf_4 = 0
-      EndIf
+          
+    ElseIf Depth_mm_4 < (H_gap_4+H_min) Then
+      Depth_weir_4 = 0
+      Flow_weir_4 = 0
+      Flow_orf_4 = 0
+          
+    ElseIf Depth_mm_4 < (H_gap_4+H_max) Then
+      Depth_weir_4 = Depth_mm_4 - H_gap_4
+      Flow_weir_4 = 4.28*C_weir*TAN(Ang_weir*pi/180/2)*(Depth_weir_4/25.4/12+k_weir)^(5/2)
+      Flow_orf_4 = 0
+    Else
+      Depth_weir_4 = H_max
+      Flow_weir_4 = 4.28*C_weir*TAN(Ang_weir*pi/180/2)*(Depth_weir_4/25.4/12+k_weir)^(5/2)
+      Flow_orf_4 = 0
+
     EndIf
     
     Flow_total_4 = Flow_orf_4 + Flow_weir_4
@@ -463,6 +498,7 @@ If Depth_mm_1 < H_min Then
       Delay(1,25,1)
       SWVX(VX1,0,1)
       Flow_cum_1 = 0  'Reset cumulative flow
+      Samples_collected_1 = 1
     EndIf
     
     'Cell 2
@@ -471,6 +507,7 @@ If Depth_mm_1 < H_min Then
       Delay(1,25,1)
       SWVX(VX2,0,1)
       Flow_cum_2 = 0  'Reset cumulative flow
+      Samples_collected_2 = 1
     EndIf
     
     'Cell 3
@@ -479,6 +516,7 @@ If Depth_mm_1 < H_min Then
       Delay(1,25,1)
       SWVX(VX3,0,1)
       Flow_cum_3 = 0  'Reset cumulative flow
+      Samples_collected_3 = 1
     EndIf
     
     'Cell 4
@@ -487,6 +525,7 @@ If Depth_mm_1 < H_min Then
       Delay(1,25,1)
       SWVX(VX4,0,1)
       Flow_cum_4 = 0  'Reset cumulative flow
+      Samples_collected_4 = 1
     EndIf
     
 		'Call Data Tables and Store Data
