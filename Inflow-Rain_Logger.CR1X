@@ -128,7 +128,7 @@ BeginProg
       Flow_cum += Flow_total*Flow_cum_dt
     EndIf
     If Flow_cum > Sampler_flow_thresh Then
-      PulsePort(C3,35000)
+      PulsePort(C4,35000)
       Flow_cum = 0
     EndIf
 		'Call Data Tables and Store Data
