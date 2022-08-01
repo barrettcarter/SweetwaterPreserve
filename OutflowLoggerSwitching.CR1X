@@ -1,9 +1,17 @@
-'CR1000X Series
-'This is the program for collecting flow-weighted samples from the
-'stormwater entering the curb inlet upstream of the bioretention pond.
+'Sweetwater Bioretention Project - Gainesville, FL
+'written by J. Barrett Carter and Ben Weeks
+'July 20, 2022
 
-'The program will also be used to measure water level in the pond and to
-'collect rain data.
+'This is the program for collecting flow-weighted samples from the
+'stormwater exiting each of the four cells in the bioretention pond.
+
+'This program multiplexes the sensor data by triggering relays with 
+'four of the control ports and reading the sensor data using one of the 
+'control ports.
+
+'The program will also be used to measure water level in the pond
+
+'CR1000X Series
 
 SequentialMode
 
@@ -130,24 +138,24 @@ Const C_orf As Float = 0.6 ' Orifice discharge coefficient
 Const D_orf As Float = 5/16*25.4 'diameter of the orifice in mm
 Const H_min As Float = 2 ' minimum depth to begin calculating flow in mm
 Const H_max As Float = 4*25.4 ' maximum depth of weir in mm
-Const Delay_1 As Float = 2 ' for sensor multiplexing
+Const Delay_1 As Float = 7 ' for sensor multiplexing
 Const Delay_2 As Float = 7 ' for sensor multiplexing
 
 'Cell 1
-Const H_gap_1 As Float = (13-4)*25.4 ' Distance between floor and bottom of weir in mm
-Const Datum_1 As Float = (13+12)*25.4 ' distance to the floor/bottom (depth = 0) in mm
+Const H_gap_1 As Float = (9+3/16)*25.4-2 ' Distance between floor and bottom of weir in mm
+Const Datum_1 As Float = (26+11/16)*25.4 ' distance to the floor/bottom (depth = 0) in mm
 
 'Cell 2
-Const H_gap_2 As Float = (13-4)*25.4 ' Distance between floor and bottom of weir in mm
-Const Datum_2 As Float = (13+12)*25.4 ' distance to the floor/bottom (depth = 0) in mm
+Const H_gap_2 As Float = (9+3/8)*25.4-3 ' Distance between floor and bottom of weir in mm
+Const Datum_2 As Float = (26+11/16)*25.4 ' distance to the floor/bottom (depth = 0) in mm
 
 'Cell 3
-Const H_gap_3 As Float = (7-4)*25.4 ' Distance between floor and bottom of weir in mm. This may not be accurate
-Const Datum_3 As Float = (7+12)*25.4 ' distance to the floor/bottom (depth = 0) in mm
+Const H_gap_3 As Float = (2+7/8)*25.4+1 ' Distance between floor and bottom of weir in mm
+Const Datum_3 As Float = (20+11/16)*25.4 ' distance to the floor/bottom (depth = 0) in mm
 
 'Cell 4
-Const H_gap_4 As Float = (7-4)*25.4 ' Distance between floor and bottom of weir in mm. This may not be accurate
-Const Datum_4 As Float = (7+12)*25.4 ' distance to the floor/bottom (depth = 0) in mm
+Const H_gap_4 As Float = (2+7/8)*25.4+3 ' Distance between floor and bottom of weir in mm
+Const Datum_4 As Float = (21+1/16)*25.4 ' distance to the floor/bottom (depth = 0) in mm
 
 'Pond
 Const Datum_p As Float = 1400 ' distance to the floor/bottom (depth = 0) in mm
@@ -192,16 +200,12 @@ EndTable
 'Questions to be answered: how do the scan interval and the portset intervals intereact with their respective data averaging.
 'Main Program
 BeginProg
-  SerialOpen(ComC5,9600,16,0,100) 'for cell 1 sensor
-                                    'Edit: we will be using one com for all 4 sensor data collections 4 coms will need to be used via portset or writeio commands
-'  SerialOpen(ComC3,9600,16,0,100) 'for cell 2 sensor    
-'  SerialOpen(ComC5,9600,16,0,100) 'for cell 3 sensor
-'  SerialOpen(ComC7,9600,16,0,100) 'for cell 4 sensor
   
-  SerialOpen(ComC7,9600,16,0,100) 'for pond sensor
+  SerialOpen(ComC5,9600,16,0,100,1) 'for cells 1 - 4 sensors
+  SerialOpen(ComC7,9600,16,0,100,1) 'for pond sensor
 
 	'Main Scan                         Edit: (this will need to mesh with the sensing requirments of the switching sensors (>=7secx4)
-	Scan(50,Sec,3,0)
+	Scan(30,Sec,3,0)
 		'Default CR1000X Datalogger Battery Voltage measurement 'BattV'
 		Battery(BattV)
 		'Default CR1000X Datalogger Wiring Panel Temperature measurement 'PTemp_C'
@@ -217,48 +221,56 @@ BeginProg
     
     ' Bring in data from range sensor and calculate depth.
     'Edit: We will bring in data from one com channel now so the range data will depend on the portset per scan sequence. this will be com channel 5 since 1 2 3 & 4 will be used for switching the relays
+    
+'Cell 1
     PortSet(C1,1)           
 		'Note:Each Trigger will need a couple delays. One for ranging and one for self cleaning. 
-		Delay (2,Delay_1,Sec)               'Note: Data sheet page 10 shows the timing sequence for the data styles 
-    SerialInRecord(ComC5,Range_mm_st_1,82,0,&H0D,Num_bytes_1,00)
-'		SerialInRecord(ComC3,Range_mm_st_2,82,0,&H0D,Num_bytes_2,00)
-'		SerialInRecord(ComC5,Range_mm_st_3,82,0,&H0D,Num_bytes_3,00)
-'		SerialInRecord(ComC7,Range_mm_st_4,82,0,&H0D,Num_bytes_4,00)
+		'Note: Data sheet page 10 shows the timing sequence for the data styles.
+		'Minimum delay before taking sensor reading is 139 ms.
+		SerialFlush(C5)
+		Delay (0,Delay_1,Sec)                
+    SerialInRecord(ComC5,Range_mm_st_1,82,0,&H0D,Num_bytes_1,101)
 
     Range_mm_1 = Range_mm_st_1
 		Depth_mm_1 = Datum_1 - Range_mm_1
-		Delay(0,Delay_2,Sec)              'Note: after 1818mS the serial data will have been collected and the self cleaning will have been completed
+		'Delay(0,Delay_2,Sec)              'Note: after 1818mS the serial data will have been collected and the self cleaning will have been completed
     PortSet(C1,0)
 
+'Cell 2
    'PortSet(Switch_2, HIGH)
     PortSet(C2,1) 'sets command port 1 high
-    'Delay (2,Delay_1,Sec)
-    SerialInRecord(ComC5,Range_mm_st_2,82,0,&H0D,Num_bytes_2,00)
+    SerialFlush(C5)
+    Delay (0,Delay_1,Sec)
+    SerialInRecord(ComC5,Range_mm_st_2,82,0,&H0D,Num_bytes_2,101)
 
     Range_mm_2 = Range_mm_st_2
 		Depth_mm_2 = Datum_2 - Range_mm_2
-		Delay(0,Delay_2,Sec)
+		'Delay(0,Delay_2,Sec)
 		PortSet(C2,0)
 
-    PortSet(C3,1)          
-    'Delay (2,Delay_1,Sec)
-    SerialInRecord(ComC5,Range_mm_st_3,82,0,&H0D,Num_bytes_3,00)
+'Cell 3
+    PortSet(C3,1)
+    SerialFlush(C5)          
+    Delay (0,Delay_1,Sec)
+    SerialInRecord(ComC5,Range_mm_st_3,82,0,&H0D,Num_bytes_3,101)
     
     Range_mm_3 = Range_mm_st_3
 		Depth_mm_3 = Datum_3 - Range_mm_3
-		Delay(0,Delay_2,Sec)
+		'Delay(0,Delay_2,Sec)
 		PortSet(C3,0)
 		
-    PortSet(C4,1) 
-    'Delay(2,Delay_1,Sec)
-    SerialInRecord(ComC5,Range_mm_st_4,82,0,&H0D,Num_bytes_4,00)
+'Cell 4
+    PortSet(C4,1)
+    SerialFlush(C5) 
+    Delay(0,Delay_1,Sec)
+    SerialInRecord(ComC5,Range_mm_st_4,82,0,&H0D,Num_bytes_4,101)
     
     Range_mm_4 = Range_mm_st_4
 		Depth_mm_4 = Datum_4 - Range_mm_4
-		Delay(0,Delay_2,Sec)
+		'Delay(0,Delay_2,Sec)
 		PortSet(C4,0)
 		
-    SerialInRecord(ComC7,Range_mm_st_p,82,0,&H0D,Num_bytes_p,00)
+    SerialInRecord(ComC7,Range_mm_st_p,82,0,&H0D,Num_bytes_p,01)
     Range_mm_p = Range_mm_st_p
 		Depth_mm_p = Datum_p - Range_mm_p
     ' Calculate flow rates
@@ -371,7 +383,7 @@ BeginProg
 '      Flow_cum_4 += Flow_total_4*Flow_cum_dt
 '    EndIf
 
-    If Depth_mm_1 < H_min Then
+    If ((Depth_mm_1 < H_min)OR(Range_mm_1 = NAN)OR(Range_mm_1 = 300)) Then
       Depth_weir_1 = 0
       Depth_orf_1 = 0
       Flow_weir_1 = 0
@@ -396,7 +408,7 @@ BeginProg
     Flow_total_1 = Flow_orf_1 + Flow_weir_1
     
     'Cell 2
-    If Depth_mm_2 < H_min Then
+    If ((Depth_mm_2 < H_min)OR(Range_mm_2 = NAN)OR(Range_mm_2 = 300)) Then
       Depth_weir_2 = 0
       Depth_orf_2 = 0
       Flow_weir_2 = 0
@@ -421,7 +433,7 @@ BeginProg
     Flow_total_2 = Flow_orf_2 + Flow_weir_2
     
     'Cell 3
-    If Depth_mm_3 < H_min Then
+    If ((Depth_mm_3 < H_min)OR(Range_mm_3 = NAN)OR(Range_mm_3 = 300)) Then
       Depth_weir_3 = 0
       Depth_orf_3 = 0
       Flow_weir_3 = 0
@@ -446,7 +458,7 @@ BeginProg
     Flow_total_3 = Flow_orf_3 + Flow_weir_3
     
     'Cell 4
-    If Depth_mm_4 < H_min Then
+    If ((Depth_mm_4 < H_min)OR(Range_mm_4 = NAN)OR(Range_mm_4 = 300)) Then
       Depth_weir_4 = 0
       Depth_orf_4 = 0
       Flow_weir_4 = 0

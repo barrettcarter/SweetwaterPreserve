@@ -5,8 +5,7 @@
 'This is the program for collecting flow-weighted samples from the
 'stormwater exiting each of the four cells in the bioretention pond.
 
-'The program will also be used to measure water level in the pond and to
-'collect rain data.
+'The program will also be used to measure water level in the pond
 
 'CR1000X Series
 
@@ -116,37 +115,37 @@ Units Flow_cum_4 = cf
 
 'Define Constants
 'General
-Const Sampler_flow_thresh = 16 'flow threshold for sample to be collected in ft^3
-Const Ang_weir = 60 ' Angle of the weir in degrees
-Const Dens_water = 1000 ' density of water in kg/m^3
-Const g = 9.81 ' acceleration due to gravity in kg m/s^2
-Const C_weir = 0.607165052-0.000874466963*Ang_weir+0.00000610393334*Ang_weir^2
-Const k_weir = 0.0144902648 - 0.00033955535*Ang_weir  + 0.00000329819003*Ang_weir^2 _
+Const Sampler_flow_thresh As Float = 16 'flow threshold for sample to be collected in ft^3
+Const Ang_weir As Float = 60 ' Angle of the weir in degrees
+Const Dens_water As Float = 1000 ' density of water in kg/m^3
+Const g As Float = 9.81 ' acceleration due to gravity in kg m/s^2
+Const C_weir As Float = 0.607165052-0.000874466963*Ang_weir+0.00000610393334*Ang_weir^2
+Const k_weir As Float = 0.0144902648 - 0.00033955535*Ang_weir  + 0.00000329819003*Ang_weir^2 _
 - 0.0000000106215442*Ang_weir^3
-Const pi = 3.14159
+Const pi As Float = 3.14159
 'Const H_orf = 0 ' Distance between floor and bottom of orifice in mm
 'Const C_orf = 0.6 ' Orifice discharge coefficient
 'Const D_orf = 5/16*25.4 'diameter of the orifice in mm
-Const H_min = 5 ' minimum depth to begin calculating flow in mm
+Const H_min As Float = 5 ' minimum depth to begin calculating flow in mm
 
 'Pond
-Const Datum_p = 1400 'Distance to pond bottom in mm
+Const Datum_p As Float = 1400 'Distance to pond bottom in mm
 
 'Cell 1
-Const H_gap_1 = 192 ' Distance between floor and bottom of weir in mm
-Const Datum_1 = (13+12)*25.4 ' distance to the floor/bottom (depth = 0) in mm
+Const H_gap_1 As Float = (9+3/16)*25.4-2 ' Distance between floor and bottom of weir in mm
+Const Datum_1 As Float = (26+11/16)*25.4 ' distance to the floor/bottom (depth = 0) in mm
 
 'Cell 2
-Const H_gap_2 = 192 ' Distance between floor and bottom of weir in mm
-Const Datum_2 = (13+12)*25.4 ' distance to the floor/bottom (depth = 0) in mm
+Const H_gap_2 As Float = (9+3/8)*25.4-3 ' Distance between floor and bottom of weir in mm
+Const Datum_2 As Float = (26+11/16)*25.4 ' distance to the floor/bottom (depth = 0) in mm
 
 'Cell 3
-Const H_gap_3 = 32.6 ' Distance between floor and bottom of weir in mm
-Const Datum_3 = (7+12)*25.4 ' distance to the floor/bottom (depth = 0) in mm
+Const H_gap_3 As Float = (2+7/8)*25.4+1 ' Distance between floor and bottom of weir in mm
+Const Datum_3 As Float = (20+11/16)*25.4 ' distance to the floor/bottom (depth = 0) in mm
 
 'Cell 4
-Const H_gap_4 = 32.6 ' Distance between floor and bottom of weir in mm
-Const Datum_4 = (7+12)*25.4 ' distance to the floor/bottom (depth = 0) in mm
+Const H_gap_4 As Float = (2+7/8)*25.4+3 ' Distance between floor and bottom of weir in mm
+Const Datum_4 As Float = (21+1/16)*25.4 ' distance to the floor/bottom (depth = 0) in mm
 
 'Define Data Tables
 DataTable(FiveMinute,True,-1)
