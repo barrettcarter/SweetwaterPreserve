@@ -26,6 +26,7 @@ Public Flow_weir As Float
 Public Flow_orf As Float
 Public Flow_cum = 0.0
 Public Flow_cum_dt As Float
+Public Samples_collected
 
 'Rain Variables
 Public Rain_in
@@ -59,7 +60,7 @@ Const C_weir = 0.607165052-0.000874466963*Ang_weir+0.00000610393334*Ang_weir^2
 Const k_weir = 0.0144902648 - 0.00033955535*Ang_weir  + 0.00000329819003*Ang_weir^2 _
 - 0.0000000106215442*Ang_weir^3
 Const pi = 3.14159
-Const Sampler_flow_thresh = 129 'flow threshold for sample to be collected in ft^3
+Const Sampler_flow_thresh = 200 'flow threshold for sample to be collected in ft^3
 
 'Define Data Tables
 
@@ -71,7 +72,9 @@ DataTable(FiveMinute,True,-1)
 	Average(1,BattV,FP2,False)
 	Average(1,Range_mm,FP2,False)
 	Average(1,Depth_mm,FP2,False)
+	Average(1,Depth_weir,FP2,False)
 	Average(1,Flow_total,FP2,False)
+	Totalize(1,Samples_collected,FP2,False)
 	Totalize(1,Rain_in,FP2,False)
 EndTable
 
@@ -87,7 +90,8 @@ BeginProg
 		PanelTemp(PTemp_C,60)
 		'Type T Thermocouple measurements 'Temp_C'
 		TCDiff(Temp_C,1,mv200C,1,TypeT,PTemp_C,True,0,60,1,0)
-		
+		'Reset sample count
+		Samples_collected = 0
     'Get rain measurement
     PulseCount(Rain_in,1,P1,1,0,0.01,0)
 
@@ -130,6 +134,7 @@ BeginProg
     If Flow_cum > Sampler_flow_thresh Then
       PulsePort(C4,35000)
       Flow_cum = 0
+      Samples_collected = 1
     EndIf
 		'Call Data Tables and Store Data
 		CallTable FiveMinute
