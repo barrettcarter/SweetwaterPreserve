@@ -228,49 +228,74 @@ BeginProg
 		'Note:Each Trigger will need a couple delays. One for ranging and one for self cleaning. 
 		'Note: Data sheet page 10 shows the timing sequence for the data styles.
 		'Minimum delay before taking sensor reading is 139 ms.
+		'SerialOpen(ComC5,9600,16,1000000,100,1)
 		SerialFlush(C5)
 		Delay (Delay_option,Delay_1,Sec)                
     SerialInRecord(ComC5,Range_mm_st_1,82,0,&H0D,Num_bytes_1,101)
+    
+
+'    Range_mm_st_2 = 0
+'    Range_mm_st_3 = 0
+'    Range_mm_st_4 = 0
 
     Range_mm_1 = Range_mm_st_1
 		Depth_mm_1 = Datum_1 - Range_mm_1
 		Delay(Delay_option,Delay_2,Sec)              'Note: after 1818mS the serial data will have been collected and the self cleaning will have been completed
     PortSet(C1,0)
+   ' SerialClose(ComC5)
     Delay(Delay_option,Delay_2,Sec)
 
 'Cell 2
    'PortSet(Switch_2, HIGH)
     PortSet(C2,1) 'sets command port 1 high
+    'SerialOpen(ComC5,9600,16,1000000,100,1)
     SerialFlush(C5)
     Delay (Delay_option,Delay_1,Sec)
     SerialInRecord(ComC5,Range_mm_st_2,82,0,&H0D,Num_bytes_2,101)
+    
+'    Range_mm_st_1 = 0
+'    Range_mm_st_3 = 0
+'    Range_mm_st_4 = 0
 
     Range_mm_2 = Range_mm_st_2
 		Depth_mm_2 = Datum_2 - Range_mm_2
 		Delay(Delay_option,Delay_2,Sec)
 		PortSet(C2,0)
+		'SerialClose(ComC5)
 		Delay(Delay_option,Delay_2,Sec)
 
 'Cell 3
     PortSet(C3,1)
+   ' SerialOpen(ComC5,9600,16,1000000,100,1)
     SerialFlush(C5)          
     Delay (Delay_option,Delay_1,Sec)
     SerialInRecord(ComC5,Range_mm_st_3,82,0,&H0D,Num_bytes_3,101)
-    
+'    
+'    Range_mm_st_1 = 0
+'    Range_mm_st_2 = 0
+'    Range_mm_st_4 = 0
+
     Range_mm_3 = Range_mm_st_3
 		Depth_mm_3 = Datum_3 - Range_mm_3
 		Delay(Delay_option,Delay_2,Sec)
 		PortSet(C3,0)
+		'SerialClose(ComC5)
 		Delay(Delay_option,Delay_2,Sec)
 'Cell 4
     PortSet(C4,1)
+   ' SerialOpen(ComC5,9600,16,1000000,100,1)
     SerialFlush(C5) 
     Delay(Delay_option,Delay_1,Sec)
     SerialInRecord(ComC5,Range_mm_st_4,82,0,&H0D,Num_bytes_4,101)
     
+'    Range_mm_st_2 = 0
+'    Range_mm_st_3 = 0
+'    Range_mm_st_1 = 0
+
     Range_mm_4 = Range_mm_st_4
 		Depth_mm_4 = Datum_4 - Range_mm_4
 		Delay(Delay_option,Delay_2,Sec)
+		'SerialClose(ComC5)
 		PortSet(C4,0)
 		Delay(Delay_option,Delay_2,Sec)
     SerialInRecord(ComC7,Range_mm_st_p,82,0,&H0D,Num_bytes_p,01)
